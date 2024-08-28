@@ -41,7 +41,6 @@ vim.opt.inccommand = 'split'
 vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
-
 -- [[ Basic Keymaps ]]
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
@@ -116,10 +115,10 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-  'github/copilot.vim',
+  --'github/copilot.vim',
   'voldikss/vim-floaterm',
 
- { 'numToStr/Comment.nvim', opts = {} },
+  { 'numToStr/Comment.nvim', opts = {} },
   {
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -223,7 +222,7 @@ require('lazy').setup({
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          -- winblend = 10, -- Remove or set to 0 to make the window opaque
+          winblend = 2, -- Remove or set to 0 to make the window opaque
           previewer = false,
         })
       end, { desc = '[/] Fuzzily search in current buffer' })
@@ -481,11 +480,11 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
           --['<CR>'] = cmp.mapping.confirm { select = true },
+          ['<C-y>'] = cmp.mapping.confirm { select = true },
           --['<Tab>'] = cmp.mapping.select_next_item(),
           --['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
@@ -502,16 +501,16 @@ require('lazy').setup({
           --
           -- <c-l> will move you to the right of each of the expansion locations.
           -- <c-h> is similar, except moving you backwards.
-          ['<C-l>'] = cmp.mapping(function()
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' }),
-          ['<C-h>'] = cmp.mapping(function()
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' }),
+          -- ['<c-l>'] = cmp.mapping(function()
+          --   if luasnip.expand_or_locally_jumpable() then
+          --     luasnip.expand_or_jump()
+          --   end
+          -- end, { 'i', 's' }),
+          -- ['<c-h>'] = cmp.mapping(function()
+          --   if luasnip.locally_jumpable(-1) then
+          --     luasnip.jump(-1)
+          --   end
+          -- end, { 'i', 's' }),
 
           -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
           --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -527,10 +526,10 @@ require('lazy').setup({
 
   --[[ Colorscheme ]]
   {
-    'ntk148v/habamax.nvim',
+    'kepano/flexoki-neovim',
     priority = 1000,
     init = function()
-      vim.cmd.colorscheme 'habamax'
+      vim.cmd.colorscheme 'flexoki-dark'
       vim.cmd.hi 'Comment gui=none'
     end,
   },
@@ -579,7 +578,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'javascript', 'css' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -604,7 +603,15 @@ require('lazy').setup({
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
-
+  {
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    after = 'nvim-treesitter',
+    requires = 'nvim-treesitter/nvim-treesitter',
+  },
+  {
+    'github/copilot.vim',
+    requires = 'github/copilot',
+  },
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
