@@ -46,21 +46,31 @@ vim.opt.scrolloff = 10
 vim.opt.hlsearch = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
--- Set the key mapping to toggle Neotree with <C-b>
+-- Keymaps
 vim.api.nvim_set_keymap('', '<C-b>', '<cmd>Neotree<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('', '<leader>c', '<cmd>CopilotChatToggle<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('', '<C-m>', '<cmd>Copilot panel<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('', '<C-t>', '<cmd>FloatermToggle<CR>', { noremap = true, silent = true })
+
+-- Keybinds to make split navigation easier.
+--  Use CMD+<hjkl> to switch between windows
+vim.keymap.set('n', '<D-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<D-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<D-Left>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<D-Right>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 
 -- Save on Ctrl-s
 vim.api.nvim_set_keymap('n', '<C-s>', ':w<CR>', { noremap = true, silent = true })
 
 -- Map <C-t> to toggle_floaterm function
-_G.float_toggle = function()
-  local cwd = vim.fn.expand '%:p:h'
-  vim.cmd 'FloatermToggle'
-  vim.cmd('FloatermSend ' .. 'cd ' .. cwd)
-  vim.cmd('FloatermSend ' .. 'clear')
-end
+--_G.float_toggle = function()
+--  local cwd = vim.fn.expand '%:p:h'
+--  vim.cmd 'FloatermToggle'
+--  vim.cmd('FloatermSend ' .. 'cd ' .. cwd)
+--  vim.cmd('FloatermSend ' .. 'clear')
+--end
 
-vim.api.nvim_set_keymap('n', '<C-t>', '<cmd>lua float_toggle()<CR>', { noremap = true, silent = true })
+--vim.api.nvim_set_keymap('n', '<C-t>', '<cmd>lua float_toggle()<CR>', { noremap = true, silent = true })
 vim.keymap.set('t', '<C-t>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]iagnostic message' })
@@ -115,10 +125,49 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-  --'github/copilot.vim',
   'voldikss/vim-floaterm',
+  'nvim-lua/plenary.nvim',
 
   { 'numToStr/Comment.nvim', opts = {} },
+  { 'OmniSharp/omnisharp-vim' },
+  {
+    'zbirenbaum/copilot.lua',
+    cmd = 'Copilot',
+    event = 'InsertEnter',
+    config = function()
+      require('copilot').setup {
+        panel = {
+          enabled = true,
+          auto_refresh = false,
+          keymap = {
+            jump_prev = '[[',
+            jump_next = ']]',
+            accept = '<CR>',
+            refresh = 'gr',
+            open = '<M-CR>',
+          },
+          layout = {
+            position = 'bottom', -- | top | left | right
+            ratio = 0.4,
+          },
+        },
+        suggestion = {
+          enabled = true,
+          auto_trigger = false,
+          hide_during_completion = true,
+          debounce = 75,
+          keymap = {
+            accept = '<M-l>',
+            accept_word = false,
+            accept_line = false,
+            next = '<M-]>',
+            prev = '<M-[>',
+            dismiss = '<C-]>',
+          },
+        },
+      }
+    end,
+  },
   {
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -131,30 +180,39 @@ require('lazy').setup({
       },
     },
   },
+  {
+    'CopilotC-Nvim/CopilotChat.nvim',
+    branch = 'canary',
+    dependencies = {
+      { 'zbirenbaum/copilot.lua' }, -- or github/copilot.vim
+      { 'nvim-lua/plenary.nvim' }, -- for curl, log wrapper
+    },
+    build = 'make tiktoken', -- Only on MacOS or Linux
+    opts = {
+      debug = true, -- Enable debugging
+      -- See Configuration section for rest
+    },
 
-  { -- Useful plugin to show you pending keybinds.
-    'folke/which-key.nvim',
-    event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-    config = function() -- This is the function that runs, AFTER loading
-      require('which-key').setup()
-
-      -- Document existing key chains
-      require('which-key').register {
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-        ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-        ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
-        ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
-        ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
-      }
-      -- visual mode
-      require('which-key').register({
-        ['<leader>h'] = { 'Git [H]unk' },
-      }, { mode = 'v' })
-    end,
+    -- See Commands section for default commands if you want to lazy load on them
   },
-
+  {
+    'folke/which-key.nvim',
+    event = 'VeryLazy',
+    opts = {
+      -- your configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
+    },
+    keys = {
+      {
+        '<leader>?',
+        function()
+          require('which-key').show { global = false }
+        end,
+        desc = 'Buffer Local Keymaps (which-key)',
+      },
+    },
+  },
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
@@ -183,31 +241,73 @@ require('lazy').setup({
       -- [[ Configure Telescope ]]
 
       require('telescope').setup {
-        -- You can put your default mappings / updates / etc. in here
-        --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        defaults = {
+          -- Default configuration for Telescope goes here:
+          -- config_key = value,
+          vimgrep_arguments = {
+            'rg',
+            '--color=never',
+            '--no-heading',
+            '--with-filename',
+            '--line-number',
+            '--column',
+            '--smart-case',
+          },
+          prompt_prefix = '> ',
+          selection_caret = '> ',
+          entry_prefix = '  ',
+          initial_mode = 'insert',
+          selection_strategy = 'reset',
+          sorting_strategy = 'descending',
+          layout_strategy = 'horizontal',
+          layout_config = {
+            horizontal = {
+              mirror = false,
+            },
+            vertical = {
+              mirror = false,
+            },
+          },
+          file_sorter = require('telescope.sorters').get_fuzzy_file,
+          file_ignore_patterns = {},
+          generic_sorter = require('telescope.sorters').get_generic_fuzzy_sorter,
+          path_display = {},
+          winblend = 0,
+          border = {},
+          borderchars = { '─', '│', '─', '│', '┌', '┐', '┘', '└' },
+          color_devicons = true,
+          use_less = true,
+          set_env = { ['COLORTERM'] = 'truecolor' }, -- default = nil,
+          file_previewer = require('telescope.previewers').vim_buffer_cat.new,
+          grep_previewer = require('telescope.previewers').vim_buffer_vimgrep.new,
+          qflist_previewer = require('telescope.previewers').vim_buffer_qflist.new,
+
+          -- Developer configurations: Not meant for general override
+          buffer_previewer_maker = require('telescope.previewers').buffer_previewer_maker,
+        },
         pickers = {
           find_files = {
-            hidden = true, -- Show hidden files
+            theme = 'dropdown',
           },
         },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
+          fzf = {
+            fuzzy = true,
+            override_generic_sorter = false,
+            override_file_sorter = true,
+            case_mode = 'smart_case',
+          },
         },
       }
 
-      -- Enable Telescope extensions if they are installed
-      pcall(require('telescope').load_extension, 'fzf')
-      pcall(require('telescope').load_extension, 'ui-select')
+      require('telescope').load_extension 'fzf'
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+      vim.keymap.set('n', '<leader>s', function() end, { desc = '[S]earch' })
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
@@ -218,7 +318,14 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-
+      -- Keybindings for Git commands
+      vim.keymap.set('n', '<leader>g', function() end, { desc = '[G]it' })
+      vim.keymap.set('n', '<leader>gs', builtin.git_status, { desc = '[G]it [S]tatus' })
+      vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })
+      vim.keymap.set('n', '<leader>gb', builtin.git_branches, { desc = '[G]it [B]ranches' })
+      vim.keymap.set('n', '<leader>gf', builtin.git_files, { desc = '[G]it [F]iles' })
+      vim.keymap.set('n', '<leader>gj', builtin.git_stash, { desc = '[G]it] [J]emma' })
+      vim.keymap.set('n', '<leader>gb', builtin.git_bcommits, { desc = '[G]it [B]commit' })
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
@@ -242,7 +349,6 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
     end,
   },
-
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
@@ -295,7 +401,7 @@ require('lazy').setup({
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+          map('<leader>Ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
 
           -- Opens a popup that displays documentation about the word under your cursor
           --  See `:help K` for why this keymap.
@@ -432,13 +538,13 @@ require('lazy').setup({
         dependencies = {
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
-          --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          --   https://github.com/rafamadriz/friendly-snippets
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
       },
       'saadparwaiz1/cmp_luasnip',
@@ -483,9 +589,9 @@ require('lazy').setup({
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
-          --['<CR>'] = cmp.mapping.confirm { select = true },
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
-          --['<Tab>'] = cmp.mapping.select_next_item(),
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+          --['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<Tab>'] = cmp.mapping.select_next_item(),
           --['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
           -- Manually trigger a completion from nvim-cmp.
@@ -526,15 +632,12 @@ require('lazy').setup({
 
   --[[ Colorscheme ]]
   {
-    'kepano/flexoki-neovim',
+    'folke/tokyonight.nvim',
     priority = 1000,
-    init = function()
-      vim.cmd.colorscheme 'flexoki-dark'
-      vim.cmd.hi 'Comment gui=none'
+    config = function()
+      vim.cmd.colorscheme 'tokyonight-night' -- Set the colorscheme
     end,
   },
-
-  -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
   { -- Collection of various small independent plugins/modules
@@ -578,7 +681,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'javascript', 'css' },
+      ensure_installed = { 'bash', 'c', 'rust', 'python', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'javascript', 'css' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -607,10 +710,6 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter-textobjects',
     after = 'nvim-treesitter',
     requires = 'nvim-treesitter/nvim-treesitter',
-  },
-  {
-    'github/copilot.vim',
-    requires = 'github/copilot',
   },
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
