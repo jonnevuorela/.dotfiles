@@ -129,7 +129,6 @@ require('lazy').setup({
   'nvim-lua/plenary.nvim',
 
   { 'numToStr/Comment.nvim', opts = {} },
-  { 'OmniSharp/omnisharp-vim' },
   {
     'zbirenbaum/copilot.lua',
     cmd = 'Copilot',
@@ -138,22 +137,22 @@ require('lazy').setup({
       require('copilot').setup {
         panel = {
           enabled = true,
-          auto_refresh = false,
+          auto_refresh = true,
           keymap = {
             jump_prev = '[[',
             jump_next = ']]',
             accept = '<CR>',
             refresh = 'gr',
-            open = '<M-CR>',
+            open = '<C-CR>',
           },
           layout = {
-            position = 'bottom', -- | top | left | right
-            ratio = 0.4,
+            position = 'right', -- | top | left | right
+            ratio = 0.3333333333333333333,
           },
         },
         suggestion = {
           enabled = true,
-          auto_trigger = false,
+          auto_trigger = true,
           hide_during_completion = true,
           debounce = 75,
           keymap = {
@@ -168,6 +167,7 @@ require('lazy').setup({
       }
     end,
   },
+
   {
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -568,6 +568,14 @@ require('lazy').setup({
           end,
         },
         completion = { completeopt = 'menu,menuone,noinsert' },
+        window = {
+          completion = {
+            border = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+          },
+          documentation = {
+            border = { '╭', '─', '╮', '│', '╯', '─', '╰', '│' },
+          },
+        },
 
         -- For an understanding of why these mappings were
         -- chosen, you will need to read `:help ins-completion`
@@ -580,8 +588,8 @@ require('lazy').setup({
           ['<C-p>'] = cmp.mapping.select_prev_item(),
 
           -- Scroll the documentation window [b]ack / [f]orward
-          --['<C-b>'] = cmp.mapping.scroll_docs(-4),
-          --['<C-f>'] = cmp.mapping.scroll_docs(4),
+          ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+          ['<C-f>'] = cmp.mapping.scroll_docs(4),
 
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
@@ -627,6 +635,7 @@ require('lazy').setup({
           { name = 'path' },
         },
       }
+      vim.b.copilot_suggestion_hidden = true
     end,
   },
 
@@ -681,7 +690,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'rust', 'python', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'javascript', 'css' },
+      ensure_installed = { 'bash', 'c', 'c_sharp', 'rust', 'python', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'javascript', 'css' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
