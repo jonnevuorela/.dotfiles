@@ -4,6 +4,12 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+vim.opt.expandtab = true
+vim.opt.shiftwidth = 3
+vim.opt.tabstop = 3
+vim.opt.smartindent = true
+vim.opt.autoindent = true
+
 vim.g.have_nerd_font = true
 -- Make line numbers default
 vim.opt.number = true
@@ -34,7 +40,7 @@ vim.opt.splitbelow = true
 --  See `:help 'list'`
 --  and `:help 'listchars'`
 vim.opt.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+vim.opt.listchars = { tab = '┃ ', trail = '·', nbsp = '␣' }
 -- Preview substitutions live, as you type!
 vim.opt.inccommand = 'split'
 -- Show which line your cursor is on
@@ -124,10 +130,9 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  -- 'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
   'voldikss/vim-floaterm',
   'nvim-lua/plenary.nvim',
-
   { 'numToStr/Comment.nvim', opts = {} },
   {
     'zbirenbaum/copilot.lua',
@@ -151,7 +156,7 @@ require('lazy').setup({
           },
         },
         suggestion = {
-          enabled = true,
+          enabled = false,
           auto_trigger = true,
           hide_during_completion = true,
           debounce = 75,
@@ -167,7 +172,6 @@ require('lazy').setup({
       }
     end,
   },
-
   {
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -697,7 +701,6 @@ require('lazy').setup({
         enable = true,
         additional_vim_regex_highlighting = { 'ruby' },
       },
-      indent = { enable = true, disable = { 'ruby' } },
     },
     config = function(_, opts)
       -- [[ Configure Treesitter ]]
@@ -706,13 +709,6 @@ require('lazy').setup({
       require('nvim-treesitter.install').prefer_git = true
       ---@diagnostic disable-next-line: missing-fields
       require('nvim-treesitter.configs').setup(opts)
-
-      -- There are additional nvim-treesitter modules that you can use to interact
-      -- with nvim-treesitter. You should go explore a few and see what interests you:
-      --
-      --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-      --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
   {
@@ -720,25 +716,28 @@ require('lazy').setup({
     after = 'nvim-treesitter',
     requires = 'nvim-treesitter/nvim-treesitter',
   },
-  -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
-
-  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
-  --  Here are some example plugins that I've included in the Kickstart repository.
-  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
+  {
+    'lukas-reineke/indent-blankline.nvim',
+    config = function()
+      require('ibl').setup {
+        indent = {
+          char = '┃',
+        },
+        scope = {
+          show_start = true,
+          show_end = false,
+        },
+        whitespace = {},
+      }
+    end,
+  },
   require 'kickstart.plugins.debug',
-  require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 }, {
   ui = {
-    -- If you are using a Nerd Font: set icons to an empty table which will use the
-    -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
     icons = vim.g.have_nerd_font and {} or {
       cmd = '⌘',
       config = '🛠',
