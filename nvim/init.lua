@@ -1,9 +1,8 @@
---
+local vim = vim
 -- Set <space> as the leader key
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 3
 vim.opt.tabstop = 3
@@ -13,6 +12,7 @@ vim.opt.autoindent = true
 vim.g.have_nerd_font = true
 -- Make line numbers default
 vim.opt.number = true
+vim.opt.relativenumber = true
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
 -- Don't show the mode, since it's already in the status line
@@ -53,11 +53,22 @@ vim.opt.hlsearch = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Keymaps
-vim.api.nvim_set_keymap('', '<C-b>', '<cmd>Neotree<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('', '<leader>c', '<cmd>CopilotChatToggle<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('', '<C-m>', '<cmd>Copilot panel<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('', '<C-t>', '<cmd>FloatermToggle<CR>', { noremap = true, silent = true })
 
+-- Neotree Keymaps
+vim.api.nvim_set_keymap('', '<C-b>', '<cmd>Neotree<CR>', { noremap = true, silent = true })
+
+-- Copilot Keymaps
+vim.api.nvim_set_keymap('', '<leader>C', '<cmd>CopilotChatToggle<CR>', { desc = '[C]opilot', noremap = true, silent = true })
+
+--Lspsaga
+vim.api.nvim_set_keymap('n', '<leader>ca', '<cmd>Lspsaga code_action<CR>', { desc = 'code [A]ction', noremap = true, silent = true })
+vim.api.nvim_set_keymap('', '<C-t>', '<cmd>Lspsaga term_toggle<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', 'K', '<cmd>Lspsaga hover_doc<CR>', { noremap = true, silent = true })
+
+--Doxygen
+vim.api.nvim_set_keymap('n', '<leader>o', '<cmd>Dox<CR>', { desc = 'D[o]xygen', noremap = true, silent = true })
+
+--
 -- Keybinds to make split navigation easier.
 --  Use CMD+<hjkl> to switch between windows
 vim.keymap.set('n', '<D-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
@@ -67,14 +78,6 @@ vim.keymap.set('n', '<D-Right>', '<C-w><C-l>', { desc = 'Move focus to the right
 
 -- Save on Ctrl-s
 vim.api.nvim_set_keymap('n', '<C-s>', ':w<CR>', { noremap = true, silent = true })
-
--- Map <C-t> to toggle_floaterm function
---_G.float_toggle = function()
---  local cwd = vim.fn.expand '%:p:h'
---  vim.cmd 'FloatermToggle'
---  vim.cmd('FloatermSend ' .. 'cd ' .. cwd)
---  vim.cmd('FloatermSend ' .. 'clear')
---end
 
 --vim.api.nvim_set_keymap('n', '<C-t>', '<cmd>lua float_toggle()<CR>', { noremap = true, silent = true })
 vim.keymap.set('t', '<C-t>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
@@ -87,16 +90,16 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 --
 -- hjkl for insert mode
 vim.keymap.set('i', '<C-h>', '<Left>', { noremap = true })
 vim.keymap.set('i', '<C-j>', '<Down>', { noremap = true })
 vim.keymap.set('i', '<C-k>', '<Up>', { noremap = true })
-vim.keymap.set('i', '<C-l>', '<Right>', { noremap = true })
+vim.keymap.set('', '<C-l>', '<Right>', { noremap = true })
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -131,8 +134,8 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   -- 'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-  'voldikss/vim-floaterm',
   'nvim-lua/plenary.nvim',
+  'vim-scripts/DoxygenToolkit.vim',
   { 'numToStr/Comment.nvim', opts = {} },
   {
     'zbirenbaum/copilot.lua',
@@ -356,6 +359,24 @@ require('lazy').setup({
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
+      {
+        'nvimdev/lspsaga.nvim',
+        config = function()
+          require('lspsaga').setup {
+            ui = {
+              code_action = '➣',
+              lines = { '┗', '┣', '┃', '━', '┏' },
+            },
+            lightbulb = {
+              virtual_text = false,
+            },
+          }
+        end,
+        dependencies = {
+          'nvim-treesitter/nvim-treesitter', -- optional
+          'nvim-tree/nvim-web-devicons', -- optional
+        },
+      },
       -- Automatically install LSPs and related tools to stdpath for Neovim
       { 'williamboman/mason.nvim', config = true }, -- NOTE: Must be loaded before dependants
       'williamboman/mason-lspconfig.nvim',
@@ -405,11 +426,11 @@ require('lazy').setup({
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('<leader>Ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+          map('<leader>cA', vim.lsp.buf.code_action, '[C]ode [A]ction')
 
           -- Opens a popup that displays documentation about the word under your cursor
           --  See `:help K` for why this keymap.
-          map('K', vim.lsp.buf.hover, 'Hover Documentation')
+          --map('K', vim.lsp.buf.hover, 'Hover Documentation')
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
@@ -523,7 +544,8 @@ require('lazy').setup({
     },
   },
 
-  { -- Autocompletion
+  -- Autocompletion
+  {
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
     dependencies = {
@@ -647,8 +669,12 @@ require('lazy').setup({
   {
     'folke/tokyonight.nvim',
     priority = 1000,
+    opts = { transparent = true, styles = {
+      sidebars = 'transparent',
+      floats = 'transparent',
+    } },
     config = function()
-      vim.cmd.colorscheme 'tokyonight-night' -- Set the colorscheme
+      vim.cmd.colorscheme 'tokyonight-storm' -- Set the colorscheme
     end,
   },
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },

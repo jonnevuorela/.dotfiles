@@ -1,0 +1,14 @@
+{
+   "suggest.enableFloat": false,
+   "languageserver": {
+      "csharp-ls": {
+         "command": "csharp-ls",
+         "filetypes": [
+            "cs"
+         ],
+         "rootPatterns": [
+            "*.csproj"
+         ]
+      }
+   }
+}
