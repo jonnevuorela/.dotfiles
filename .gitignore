@@ -1,13 +1,8 @@
-*
-
 !.gitignore
-!.bashrc
-!.config/nvim/
-!.config/nvim/*
-!.tmux.conf
-!.local/bin/firefox.sh
 
-.config/nvim/*.md
-.config/nvim/*.txt
-.config/nvim/*.tags
-.config/nvim/doc
+nvim/*.md
+nvim/*.txt
+nvim/*.tags
+nvim/doc
+
+.DS_Store
