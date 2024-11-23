@@ -29,10 +29,14 @@
               "mas"
             ];
             casks = [
+            "duckduckgo"
+            "discord"
             ];
             masApps = {
                };
             onActivation.cleanup = "zap";
+            onActivation.autoUpdate = true;
+            onActivation.upgrade = true;
           };
 
         fonts.packages = [
@@ -62,6 +66,19 @@
               ${pkgs.mkalias}/bin/mkalias "$src" "/Applications/Nix Apps/$app_name"
             done
           '';
+          
+          system.defaults = {
+            dock.autohide = true;
+            dock.persistent-apps = [
+            "${pkgs.alacritty}/Applications/Alacritty.app"
+            "/Applications/DuckDuckGo.app/.app"
+            "${pkgs.obsidian}/Applications/Obsidian.app"
+            ];
+            finder.FXPreferredViewStyle = "clmv";
+            NSGlobalDomain.AppleICUForce24HourTime = true;
+            NSGlobalDomain.AppleInterfaceStyle = "Dark";
+            NSGlobalDomain.KeyRepeat = 2;
+            };
 
         # Necessary for using flakes on this system.
         nix.settings.experimental-features = "nix-command flakes";
