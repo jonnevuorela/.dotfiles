@@ -1,6 +1,4 @@
 {
-  description = "Example nix-darwin system flake";
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:LnL7/nix-darwin";
@@ -21,29 +19,35 @@
             pkgs.alacritty
             pkgs.neovim
             pkgs.mkalias
+            pkgs.discord
           ];
-        homebrew =
-          {
-            enable = true;
-            brews = [
-              "mas"
-            ];
-            casks = [
-            "duckduckgo"
-            "discord"
-            ];
-            masApps = {
-               };
-            onActivation.cleanup = "zap";
-            onActivation.autoUpdate = true;
-            onActivation.upgrade = true;
-          };
 
-        fonts.packages = [
-          (pkgs.nerdfonts.override {
-            fonts = [ "JetBrainsMono" ];
-          })
-        ];
+        homebrew = {
+          enable = true;
+          brews = [
+            "mas"
+            "ripgrep"
+            "lazygit"
+            "sketchybar"
+          ];
+          casks = [
+          "nikitabobko/tap/aerospace"
+          ];
+          masApps = {};
+          onActivation = {
+            cleanup = "zap";
+            autoUpdate = true;
+            upgrade = true;
+          };
+        };
+
+        fonts = {
+          packages = [
+            (pkgs.nerdfonts.override {
+              fonts = [ "JetBrainsMono" "Hack" ];
+            })
+          ];
+        };
 
         # For making apps appear on spotlight search.
         system.activationScripts.applications.text =
@@ -66,19 +70,36 @@
               ${pkgs.mkalias}/bin/mkalias "$src" "/Applications/Nix Apps/$app_name"
             done
           '';
-          
-          system.defaults = {
-            dock.autohide = true;
-            dock.persistent-apps = [
+
+        system.defaults = {
+          dock.autohide = true;
+          dock.persistent-apps = [
             "${pkgs.alacritty}/Applications/Alacritty.app"
-            "/Applications/DuckDuckGo.app/.app"
-            "${pkgs.obsidian}/Applications/Obsidian.app"
-            ];
-            finder.FXPreferredViewStyle = "clmv";
-            NSGlobalDomain.AppleICUForce24HourTime = true;
-            NSGlobalDomain.AppleInterfaceStyle = "Dark";
-            NSGlobalDomain.KeyRepeat = 2;
-            };
+            "/Applications/DuckDuckGo.app"
+          ];
+          finder.FXPreferredViewStyle = "clmv";
+          NSGlobalDomain.AppleICUForce24HourTime = true;
+          NSGlobalDomain.AppleInterfaceStyle = "Dark";
+          NSGlobalDomain.KeyRepeat = 2;
+          NSGlobalDomain.NSAutomaticWindowAnimationsEnabled = false;
+          NSGlobalDomain._HIHideMenuBar = true;
+          trackpad.TrackpadRightClick = true;
+          NSGlobalDomain."com.apple.trackpad.trackpadCornerClickBehavior" = 1; # right click
+          universalaccess.reduceMotion = true;
+        };
+        system.keyboard = {
+         enableKeyMapping = true;
+         remapCapsLockToControl = true;
+        };
+        system.startup.chime = false;
+        programs.zsh = {
+           enable = true;
+           enableBashCompletion = true;
+           enableCompletion = true;
+           enableSyntaxHighlighting = true;
+           enableFzfCompletion = true;
+           enableFzfHistory = true;
+        };
 
         # Necessary for using flakes on this system.
         nix.settings.experimental-features = "nix-command flakes";
@@ -103,21 +124,21 @@
       darwinConfigurations."Jonne-MacBook-Air" = nix-darwin.lib.darwinSystem {
         modules = [
           configuration
-         nix-homebrew.darwinModules.nix-homebrew
-        {
-          nix-homebrew = {
-            # Install Homebrew under the default prefix
-            enable = true;
+          nix-homebrew.darwinModules.nix-homebrew
+          {
+            nix-homebrew = {
+              # Install Homebrew under the default prefix
+              enable = true;
 
-            # Apple Silicon Only: Also install Homebrew under the default Intel prefix for Rosetta 2
-            enableRosetta = true;
+              # Apple Silicon Only: Also install Homebrew under the default Intel prefix for Rosetta 2
+              enableRosetta = true;
 
-            # User owning the Homebrew prefix
-            user = "jonne";
-
-          };
-        }
+              # User owning the Homebrew prefix
+              user = "jonne";
+            };
+          }
         ];
       };
     };
 }
+
