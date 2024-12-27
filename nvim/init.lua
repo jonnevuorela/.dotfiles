@@ -196,7 +196,23 @@ require('lazy').setup({
     },
     build = 'make tiktoken', -- Only on MacOS or Linux
     opts = {
+      model = 'claude-3.5-sonnet',
       debug = true, -- Enable debugging
+      window = {
+        layout = 'vertical', -- 'vertical', 'horizontal', 'float', 'replace'
+        width = 0.2, -- fractional width of parent, or absolute width in columns when > 1
+        height = 1, -- fractional height of parent, or absolute height in rows when > 1
+        -- Options below only apply to floating windows
+        relative = 'editor', -- 'editor', 'win', 'cursor', 'mouse'
+        border = 'single', -- 'none', single', 'double', 'rounded', 'solid', 'shadow'
+        row = nil, -- row position of the window, default is centered
+        col = nil, -- column position of the window, default is centered
+        title = function(opts)
+          return string.format('Copilot Chat (%s)', opts.model)
+        end,
+        footer = nil, -- footer of chat window
+        zindex = 1, -- determines if window is on top or below other floating windows
+      },
       -- See Configuration section for rest
     },
 
@@ -669,17 +685,31 @@ require('lazy').setup({
       vim.b.copilot_suggestion_hidden = true
     end,
   },
-
   --[[ Colorscheme ]]
   {
-    'folke/tokyonight.nvim',
+    'rebelot/kanagawa.nvim',
     priority = 1000,
-    opts = { transparent = true, styles = {
-      sidebars = 'transparent',
-      floats = 'transparent',
-    } },
+    opts = {
+      transparent = true,
+      styles = {
+        sidebars = 'transparent',
+        floats = 'transparent',
+      },
+      colors = {
+        theme = {
+          all = {
+            ui = {
+              bg_gutter = 'none',
+            },
+          },
+        },
+      },
+    },
     config = function()
-      vim.cmd.colorscheme 'tokyonight' -- Set the colorscheme
+      vim.cmd.colorscheme 'kanagawa' -- Set the colorscheme
+
+      -- Set LineNr highlight group to make line numbers not highlighted
+      vim.cmd 'highlight LineNr guifg=NONE guibg=NONE'
     end,
   },
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
@@ -767,6 +797,7 @@ require('lazy').setup({
   require 'plugins.autopairs',
   require 'plugins.neo-tree',
   require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'plugins.snacks',
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
