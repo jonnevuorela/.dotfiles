@@ -54,8 +54,8 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Keymaps
 
--- Neotree Keymaps
-vim.api.nvim_set_keymap('', '<C-b>', '<cmd>Neotree<CR>', { noremap = true, silent = true })
+-- File explorer Keymaps
+vim.api.nvim_set_keymap('', '<C-b>', '<cmd>Explore<CR>', { noremap = true, silent = true })
 
 -- Copilot Keymaps
 vim.api.nvim_set_keymap('', '<leader>C', '<cmd>CopilotChatToggle<CR>', { desc = '[C]opilot', noremap = true, silent = true })
@@ -200,7 +200,7 @@ require('lazy').setup({
       debug = true, -- Enable debugging
       window = {
         layout = 'vertical', -- 'vertical', 'horizontal', 'float', 'replace'
-        width = 0.2, -- fractional width of parent, or absolute width in columns when > 1
+        width = 0.4, -- fractional width of parent, or absolute width in columns when > 1
         height = 1, -- fractional height of parent, or absolute height in rows when > 1
         -- Options below only apply to floating windows
         relative = 'editor', -- 'editor', 'win', 'cursor', 'mouse'
@@ -242,27 +242,19 @@ require('lazy').setup({
     branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
-      { -- If encountering errors, see telescope-fzf-native README for installation instructions
+      'debugloop/telescope-undo.nvim',
+      {
         'nvim-telescope/telescope-fzf-native.nvim',
-
-        -- `build` is used to run some command when the plugin is installed/updated.
-        -- This is only run then, not every time Neovim starts up.
         build = 'make',
-
-        -- `cond` is a condition used to determine whether this plugin should be
-        -- installed and loaded.
         cond = function()
           return vim.fn.executable 'make' == 1
         end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
-
-      -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
       -- [[ Configure Telescope ]]
-
       require('telescope').setup {
         defaults = {
           -- Default configuration for Telescope goes here:
@@ -323,11 +315,14 @@ require('lazy').setup({
             override_file_sorter = true,
             case_mode = 'smart_case',
           },
+          undo = {},
         },
       }
 
       require('telescope').load_extension 'fzf'
       require('telescope').load_extension 'ui-select'
+      require('telescope').load_extension 'undo'
+      vim.keymap.set('n', '<leader>u', '<cmd>Telescope undo<cr>', { desc = '[U]ndo' })
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -370,6 +365,42 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+    end,
+  },
+  {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+      harpoon:setup {}
+
+      -- basic telescope configuration
+      local conf = require('telescope.config').values
+      local function toggle_telescope(harpoon_files)
+        local file_paths = {}
+        for _, item in ipairs(harpoon_files.items) do
+          table.insert(file_paths, item.value)
+        end
+
+        require('telescope.pickers')
+          .new({}, {
+            prompt_title = 'Harpoon™',
+            finder = require('telescope.finders').new_table {
+              results = file_paths,
+            },
+            previewer = conf.file_previewer {},
+            sorter = conf.generic_sorter {},
+          })
+          :find()
+      end
+
+      vim.keymap.set('n', '<leader>a', function()
+        harpoon:list():add()
+      end, { desc = 'Add to Harpoon™' })
+      vim.keymap.set('n', '<C-e>', function()
+        toggle_telescope(harpoon:list())
+      end, { desc = 'Open Harpoon™ window' })
     end,
   },
   { -- LSP Configuration & Plugins
@@ -797,7 +828,6 @@ require('lazy').setup({
   require 'plugins.autopairs',
   require 'plugins.neo-tree',
   require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
-  require 'plugins.snacks',
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
