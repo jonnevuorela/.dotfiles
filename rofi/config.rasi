@@ -1,0 +1,30 @@
+/* Main Config 1080p */
+
+@import "~/.config/rofi/master-config.rasi" 
+
+/* ---- Window ---- */
+window {
+    width:	60%;
+}
+/* ---- Listview ---- */
+listview {
+  columns: 6;
+  lines: 4;
+  fixed-height:	true;
+}
+
+/* ---- Element ---- */
+element {
+  orientation: vertical;
+  padding: 12px 0px 0px 0px;
+  spacing: 6px;
+}
+
+element-icon {
+  size: 6%;
+}
+
+element-text {
+  font: "Fira Code SemiBold 10";
+  horizontal-align: 0.5;
+}
