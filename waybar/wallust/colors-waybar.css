@@ -1,22 +1,23 @@
-@define-color foreground #697883;    /* Muted gray-blue */
-@define-color background rgba(10,11,15,0.25);    /* Deeper void black with transparency */
-@define-color cursor #697883;        /* Match foreground */
+/* ---- 💫 https://github.com/JaKooLit 💫 ---- */  
+ /* wallust template - colors-waybar */
 
-@define-color color0 #151719;        /* Darker base */
-@define-color color1 #4a3538;        /* Muted blood */
-@define-color color2 #3b4341;        /* Dark forest */
-@define-color color3 #4a3d2c;        /* Deep bronze */
-@define-color color4 #2c3840;        /* Midnight blue */
-@define-color color5 #403a42;        /* Dark purple mist */
-@define-color color6 #2a3b3e;        /* Deep teal */
-@define-color color7 #393b42;        /* Shadow gray */
+@define-color foreground #F1E1F1;
+@define-color background rgba(26,25,30,0.25);
+@define-color cursor #F1E1F1;
 
-@define-color color8  #1d2026;       /* Deep shadow */
-@define-color color9  #523f44;       /* Faded crimson */
-@define-color color10 #424b47;       /* Forest shadow */
-@define-color color11 #524433;       /* Aged bronze */
-@define-color color12 #394550;       /* Dark steel blue */
-@define-color color13 #484247;       /* Mystic purple */
-@define-color color14 #324547;       /* Dark cyan */
-@define-color color15 #464952;       /* Twilight gray */
-
+@define-color color0 #414045;
+@define-color color1 #141022;
+@define-color color2 #393050;
+@define-color color3 #4F2557;
+@define-color color4 #645384;
+@define-color color5 #69588A;
+@define-color color6 #A280A2;
+@define-color color7 #E3CCE3;
+@define-color color8 #9F8F9F;
+@define-color color9 #1B162E;
+@define-color color10 #4D3F6B;
+@define-color color11 #693174;
+@define-color color12 #856FB0;
+@define-color color13 #8C75B8;
+@define-color color14 #D8AAD8;
+@define-color color15 #E3CCE3;

@@ -160,7 +160,11 @@ require("lazy").setup({
 			require("which-key").setup({})
 		end,
 	},
-
+	{
+		"windwp/nvim-autopairs",
+		event = "InsertEnter",
+		config = true,
+	},
 	-- Harpoon™
 	{
 		"ThePrimeagen/harpoon",
@@ -198,7 +202,6 @@ require("lazy").setup({
 			end, { desc = "Open Harpoon™ window" })
 		end,
 	},
-
 	-- LSP and Formatting Setup to buffer
 	{
 		"neovim/nvim-lspconfig",
@@ -283,7 +286,6 @@ require("lazy").setup({
 					end,
 				},
 			})
-
 			-- Setup mason-null-ls
 			require("mason-null-ls").setup({
 				ensure_installed = {
@@ -296,12 +298,16 @@ require("lazy").setup({
 						require("mason-null-ls.automatic_setup")(source_name, methods)
 					end,
 				},
+				automatic_setup = {
+					enable = true,
+				},
 			})
 
 			-- Setup null-ls
 			local null_ls = require("null-ls")
 			null_ls.setup({
 				sources = {
+					-- GO tmpl
 					null_ls.builtins.formatting.prettier.with({
 						filetypes = { "template", "gotmpl" },
 						extra_args = { "--parser", "html" },
@@ -383,16 +389,64 @@ require("lazy").setup({
 							require("luasnip.loaders.from_vscode").lazy_load()
 						end,
 					},
+					"benfowler/telescope-luasnip.nvim",
 				},
 			},
 			"saadparwaiz1/cmp_luasnip",
 			"hrsh7th/cmp-nvim-lsp",
 			"hrsh7th/cmp-path",
 		},
+
 		config = function()
 			local cmp = require("cmp")
 			local luasnip = require("luasnip")
-			luasnip.config.setup({})
+			local s = luasnip.snippet
+			local t = luasnip.text_node
+			local i = luasnip.insert_node
+
+			luasnip.add_snippets("go", {
+				s("doc", {
+					t({ "/**", " * " }),
+					i(1, "description"),
+					t({ "", " * @param " }),
+					i(2, "param_name"),
+					t({ " " }),
+					i(3, "param_description"),
+					t({ "", " * @return " }),
+					i(4, "return_description"),
+					t({ "", " */" }),
+				}),
+
+				s("//", {
+					t("// "),
+					i(1, "comment"),
+				}),
+			})
+
+			luasnip.config.setup({
+				history = true,
+				updateevents = "TextChanged,TextChangedI",
+			})
+
+			vim.tbl_map(function(type)
+				require("luasnip.loaders.from_" .. type).lazy_load()
+			end, { "vscode", "snipmate", "lua" })
+
+			-- Friendly-snippets - enable standardized comments snippets
+			require("luasnip").filetype_extend("go", { "godoc" })
+			require("luasnip").filetype_extend("typescript", { "tsdoc" })
+			require("luasnip").filetype_extend("javascript", { "jsdoc" })
+			require("luasnip").filetype_extend("lua", { "luadoc" })
+			require("luasnip").filetype_extend("python", { "pydoc" })
+			require("luasnip").filetype_extend("rust", { "rustdoc" })
+			require("luasnip").filetype_extend("cs", { "csharpdoc" })
+			require("luasnip").filetype_extend("java", { "javadoc" })
+			require("luasnip").filetype_extend("c", { "cdoc" })
+			require("luasnip").filetype_extend("cpp", { "cppdoc" })
+			require("luasnip").filetype_extend("php", { "phpdoc" })
+			require("luasnip").filetype_extend("kotlin", { "kdoc" })
+			require("luasnip").filetype_extend("ruby", { "rdoc" })
+			require("luasnip").filetype_extend("sh", { "shelldoc" })
 
 			cmp.setup({
 				snippet = {
@@ -409,7 +463,6 @@ require("lazy").setup({
 					["<C-f>"] = cmp.mapping.scroll_docs(4),
 					["<CR>"] = cmp.mapping.confirm({ select = true }),
 					["<Tab>"] = cmp.mapping.select_next_item(),
-
 					["<C-Space>"] = cmp.mapping.complete({}),
 				}),
 				sources = {
@@ -578,7 +631,13 @@ require("lazy").setup({
 			})
 		end,
 	},
+	{
+		"vague2k/vague.nvim",
+		config = function()
+			require("vague").setup({})
+		end,
+	},
 })
 
 -- Set the color scheme after initializing the plugins
-vim.cmd.colorscheme("rose-pine")
+vim.cmd.colorscheme("vague")

@@ -1,4 +1,3 @@
-//* ---- 💫 https://github.com/JaKooLit 💫 ---- *//
 /* Waybar Modules - Custom Modules */
 /* Basically created to reduce the lines in Waybar Modules bank */
 /* NOTE: This is only for Custom Modules */
@@ -110,7 +109,13 @@
 	"exec": "$HOME/.config/hypr/scripts/WaybarCava.sh",
 	"format": "{}"
 },
-
+"custom/gpu": {
+    "format": "{}% 󰢮",
+    "format-alt-click": "click",
+    "interval": 1,
+    "min-length": 5,
+    "exec": "cat /sys/class/drm/card1/device/gpu_busy_percent",
+},
 "custom/playerctl": {
 	"format": "<span>{}</span>",
 	"return-type": "json",

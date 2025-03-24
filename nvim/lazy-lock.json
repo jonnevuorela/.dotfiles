@@ -17,6 +17,7 @@
   "mini.icons": { "branch": "main", "commit": "910db5df9724d65371182948f921fce23c2c881e" },
   "neodev.nvim": { "branch": "main", "commit": "46aa467dca16cf3dfe27098042402066d2ae242d" },
   "none-ls.nvim": { "branch": "main", "commit": "ed8f80849ef1ad31c2f74679fafdef7801091247" },
+  "nvim-autopairs": { "branch": "master", "commit": "68f0e5c3dab23261a945272032ee6700af86227a" },
   "nvim-cmp": { "branch": "main", "commit": "12509903a5723a876abd65953109f926f4634c30" },
   "nvim-lspconfig": { "branch": "master", "commit": "e5bf88e5ea1c4cea5ea96b1e970cb264f7a401a1" },
   "nvim-treesitter": { "branch": "master", "commit": "61a385d74f822dcd1d223f42f1267d1317aaa2d0" },
@@ -25,10 +26,11 @@
   "plenary.nvim": { "branch": "master", "commit": "3707cdb1e43f5cea73afb6037e6494e7ce847a66" },
   "rose-pine": { "branch": "main", "commit": "42f0724e0bca9f57f0bcfa688787c37b8d4befe8" },
   "telescope-fzf-native.nvim": { "branch": "main", "commit": "dae2eac9d91464448b584c7949a31df8faefec56" },
-  "telescope-themes": { "branch": "main", "commit": "9b7c368b83b82b53c0a6e9e977f8329e5f1fe269" },
+  "telescope-luasnip.nvim": { "branch": "master", "commit": "07a2a2936a7557404c782dba021ac0a03165b343" },
   "telescope-ui-select.nvim": { "branch": "master", "commit": "6e51d7da30bd139a6950adf2a47fda6df9fa06d2" },
   "telescope-undo.nvim": { "branch": "main", "commit": "2971cc9f193ec09e0c5de3563f99cbea16b63f10" },
   "telescope.nvim": { "branch": "0.1.x", "commit": "a0bbec21143c7bc5f8bb02e0005fa0b982edc026" },
+  "vague.nvim": { "branch": "main", "commit": "8a33468ca4fc73adc1b111b19f89b7663fdfd137" },
   "vim-oscyank": { "branch": "main", "commit": "4b068e5b553f907c5f6d00b0ab9e1e3b98cf71bf" },
   "which-key.nvim": { "branch": "main", "commit": "6cebd86917df559a88de0f806b2989799c6e6423" }
 }

@@ -9,7 +9,10 @@ iDIR="$HOME/.config/swaync/icons"
 
 # Online Stations. Edit as required
 declare -A online_music=(
-  ["YT - Youtube Remix 📹🎶"]="https://youtube.com/playlist?list=PLeqTkIUlrZXlSNn3tcXAa-zbo95j0iN-0"
+["YT - [Anti-Hero!] mix"]="https://www.youtube.com/playlist?list=PL5ht40Zw3GAPWIs_dXmetBXpbUIji_WGq"
+["YT - [Anti-Hero1] mix long"]="https://www.youtube.com/playlist?list=PL5ht40Zw3GAPmfFqpsuPgKE1PJ_Svgb2X"
+  ["YT - Youtube Remix - Floriane Vallier 📹🎶"]="https://www.youtube.com/playlist?list=PLMC3EeH1o_1CjUJZ3s0caZfkWalsB0oj3"
+  ["YT - Universal Music EDM Mix 🌍"]="https://www.youtube.com/playlist?list=PLRxEDEb_tRAjTqni9LwrlB04lPAfViCum"
   ["YT - Personal Music👻"]="https://www.youtube.com/playlist?list=PLd4jlZ_fWNvnRvuwqiRy1GAxDK9Ah80_Z"
   ["YT - Cybercore 🧑‍💻🎶🪩"]="https://www.youtube.com/playlist?list=PLd4jlZ_fWNvmEPrcXXWl8rHrvN5UGxwEL "
   ["YT - Mellow Vibes - Morning Playlist"]="https://www.youtube.com/watch?v=kDGpZsxUW-Q"

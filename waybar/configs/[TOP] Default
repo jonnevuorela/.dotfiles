@@ -1,5 +1,3 @@
-/* ---- 💫 https://github.com/JaKooLit 💫 ---- */
-
 // ### DEFAULT - Top ### //
 {
 "include": [
@@ -24,6 +22,8 @@
 	"hyprland/workspaces#kanji",
 	"custom/separator#dot-line",
 	"cpu",
+	"custom/separator#dot-line", 
+   "custom/gpu",
 	"custom/separator#dot-line", 
 	"temperature",
 	"custom/separator#dot-line", 
