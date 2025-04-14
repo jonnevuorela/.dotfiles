@@ -7,6 +7,7 @@ vim.g.maplocalleader = " "
 vim.keymap.set("n", "<C-b>", vim.cmd.Ex, { desc = "[Buffer] Open Ex mode" })
 -- Diagnostics
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic [E]rror messages" })
+
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagnostic [Q]uickfix list" })
 -- Save
 vim.api.nvim_set_keymap("n", "<C-s>", ":w<CR>", { noremap = true, silent = true })
@@ -108,6 +109,7 @@ vim.opt.rtp:prepend(lazypath)
 
 -- Plugins setup
 require("lazy").setup({
+
 	-- Universal Yank
 	{
 		"ojroques/vim-oscyank",
@@ -116,6 +118,7 @@ require("lazy").setup({
 			vim.g.oscyank_autocopy = 1
 		end,
 	},
+
 	-- Indent lines
 	{
 		"lukas-reineke/indent-blankline.nvim",
@@ -142,11 +145,13 @@ require("lazy").setup({
 			})
 
 			local hooks = require("ibl.hooks")
+
 			hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
 				-- vim.api.nvim_set_hl(0, "IblIndent", { fg = "#3c3836" })
 			end)
 		end,
 	},
+
 	-- folke
 	{
 		"folke/which-key.nvim",
@@ -165,6 +170,15 @@ require("lazy").setup({
 		event = "VimEnter",
 		dependencies = { "nvim-lua/plenary.nvim" },
 		opts = { signs = false },
+	},
+	{
+		"folke/lazydev.nvim",
+		ft = "lua",
+		opts = {
+			library = {
+				{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
+			},
+		},
 	},
 
 	-- Autopair
@@ -270,20 +284,8 @@ require("lazy").setup({
 		end,
 	},
 
-	-- LSP Plugins
+	-- Main LSP Configuration
 	{
-		-- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
-		-- used for completion, annotations and signatures of Neovim apis
-		"folke/lazydev.nvim",
-		ft = "lua",
-		opts = {
-			library = {
-				{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
-			},
-		},
-	},
-	{
-		-- Main LSP Configuration
 		"neovim/nvim-lspconfig",
 		dependencies = {
 			{ "williamboman/mason.nvim", opts = {} },
@@ -438,7 +440,8 @@ require("lazy").setup({
 		end,
 	},
 
-	{ -- Autoformat
+	-- Autoformat
+	{
 		"stevearc/conform.nvim",
 		event = { "BufWritePre" },
 		cmd = { "ConformInfo" },
@@ -506,21 +509,14 @@ require("lazy").setup({
 		--- @type blink.cmp.Config
 		opts = {
 			keymap = {
-				preset = "default",
-				["<CR>"] = {
-					"select_and_accept",
-					-- Fallback to newline if the completion menu is not visible
-					fallback = function()
-						return vim.api.nvim_replace_termcodes("<CR>", true, true, true)
-					end,
-				},
+				preset = "enter",
 			},
-
 			appearance = {
 				nerd_font_variant = "mono",
 			},
 
 			completion = {
+				accept = { auto_brackets = { enabled = true } },
 				menu = {
 					auto_show = true,
 					-- nvim-cmp style menu
@@ -529,6 +525,9 @@ require("lazy").setup({
 							{ "label", "label_description", gap = 1 },
 							{ "kind" },
 							{ "source_name" },
+						},
+						treesitter = {
+							enable = true,
 						},
 					},
 				},
@@ -545,14 +544,42 @@ require("lazy").setup({
 				},
 			},
 
-			snippets = { preset = "luasnip" },
+			snippets = { preset = "default" },
 			fuzzy = { implementation = "lua" },
 
 			signature = { enabled = true },
 		},
 	},
 
-	-- Set up color schemes
+	-- Treesitter
+	{
+		"nvim-treesitter/nvim-treesitter",
+		build = ":TSUpdate",
+		main = "nvim-treesitter.configs",
+		opts = {
+			ensure_installed = {
+				"bash",
+				"c",
+				"diff",
+				"html",
+				"lua",
+				"luadoc",
+				"markdown",
+				"markdown_inline",
+				"query",
+				"vim",
+				"vimdoc",
+			},
+			auto_install = true,
+			highlight = {
+				enable = true,
+				additional_vim_regex_highlighting = { "ruby" },
+			},
+			indent = { enable = true, disable = { "ruby" } },
+		},
+	},
+
+	-- Color schemes
 	{
 		"vague2k/vague.nvim",
 		config = function()
