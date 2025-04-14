@@ -24,7 +24,7 @@ vim.keymap.set("", "<C-l>", "<Right>", { noremap = true })
 -- Lspsaga
 vim.api.nvim_set_keymap(
 	"n",
-	"<leader>ca",
+	"<leader>cA",
 	"<cmd>Lspsaga code_action<CR>",
 	{ desc = "code [A]ction", noremap = true, silent = true }
 )
@@ -304,7 +304,7 @@ require("lazy").setup({
 					end
 					map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 
-					map("<leader>ga", vim.lsp.buf.code_action, "[G]oto Code [A]ction", { "n", "x" })
+					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction", { "n", "x" })
 					map("<leader>gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
 					map("<leader>gi", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
 					map("<leader>gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
