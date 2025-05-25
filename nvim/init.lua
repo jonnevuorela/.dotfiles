@@ -305,12 +305,12 @@ require("lazy").setup({
 					map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 
 					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction", { "n", "x" })
-					map("<leader>gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
-					map("<leader>gi", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
-					map("<leader>gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
-					map("<leader>gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-					map("<leader>gt", require("telescope.builtin").lsp_type_definitions, "[G]oto [T]ype Definition")
-					map("<leader>od", require("telescope.builtin").lsp_document_symbols, "[O]pen [D]ocument Symbols")
+					map("gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
+					map("gi", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
+					map("gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
+					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
+					map("gt", require("telescope.builtin").lsp_type_definitions, "[G]oto [T]ype Definition")
+					map("od", require("telescope.builtin").lsp_document_symbols, "[O]pen [D]ocument Symbols")
 					map(
 						"<leader>ow",
 						require("telescope.builtin").lsp_dynamic_workspace_symbols,

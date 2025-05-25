@@ -1,0 +1,23 @@
+* {
+    //background:    #000000;
+    foreground:    #EFEFEF;
+    color0:        #000000;
+    color1:        #461515;
+    color2:        #393838;
+    color3:        #3F3E3E;
+    color4:        #646464;
+    color5:        #969696;
+    color6:        #9C9C9C;
+    color7:        #DFDFDF;
+    color8:        #9C9C9C;
+    color9:        #5E1C1C;
+    color10:       #4B4A4A55;
+    color11:       #545353;
+    color12:       #858585;
+    color13:       #C8C8C8;
+    color14:       #D0D0D0;
+    color15:       #DFDFDF;
+
+    // Optional: alpha variants for semi-transparent backgrounds
+    background: #000000CC; // 80% alpha
+}

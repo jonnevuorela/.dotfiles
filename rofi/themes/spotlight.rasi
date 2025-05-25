@@ -1,0 +1,89 @@
+@theme "~/.config/rofi/themes/colors1.rasi"
+
+* {
+    font: "CodeNewRoman Nerd Font Mono 18";
+    highlight: @color7;
+    text:      @color7;
+}
+
+window {
+    padding: 32px 0px 0px 0px;
+    border-radius: 18px;
+    background-color: @background;
+    width: 40%;
+
+    location: north;
+    y-offset: 20%;
+    x-offset: 0;
+    
+    fullscreen: false;
+    transparency: "real";
+}
+
+mainbox {
+    padding: 0px 24px 24px 24px;
+    background-color: transparent;
+}
+
+inputbar {
+    padding: 18px 24px 12px 24px;
+    border-radius: 8px;
+    background-color: @color10;
+    margin: 0 0 14px 0;
+    spacing: 10px;
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @highlight;
+}
+
+listview {
+    background-color: transparent;
+    lines:            6;
+    fixed-height:     false;
+}
+
+#entry {
+    background-color: transparent;
+    text-color: @text;
+}
+element {
+    orientation: horizontal;
+    padding: 18px;
+    spacing: 6px;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @text;
+}
+
+element selected.normal {
+    background-color: @color10;
+    text-color: @highlight;
+    border-radius: 8px;
+}
+
+element normal.active {
+    background-color: @highlight;
+}
+
+element alternate.normal {
+    background-color: transparent;
+}
+
+element-text {
+    text-color: @text;
+    background-color: transparent;
+    font: "CodeNewRoman Nerd Font Mono 12";
+    vertical-align: 0.5;
+}
+
+element-icon {
+    background-color: transparent;
+    text-color: @text;
+    size: 4%;
+}
