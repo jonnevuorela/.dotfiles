@@ -5,22 +5,27 @@ vim.g.maplocalleader = " "
 
 -- Explorer
 vim.keymap.set("n", "<C-b>", vim.cmd.Ex, { desc = "[Buffer] Open Ex mode" })
+
 -- Diagnostics
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic [E]rror messages" })
 
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagnostic [Q]uickfix list" })
+
 -- Save
 vim.api.nvim_set_keymap("n", "<C-s>", ":w<CR>", { noremap = true, silent = true })
+
 -- Use CTRL+<hjkl> to switch between windows
 vim.keymap.set("n", "<D-h>", "<C-w><C-h>", { desc = "Move focus to the left window" })
 vim.keymap.set("n", "<D-l>", "<C-w><C-l>", { desc = "Move focus to the right window" })
 vim.keymap.set("n", "<D-Left>", "<C-w><C-h>", { desc = "Move focus to the left window" })
 vim.keymap.set("n", "<D-Right>", "<C-w><C-l>", { desc = "Move focus to the right window" })
+
 -- hjkl for insert mode
 vim.keymap.set("i", "<C-h>", "<Left>", { noremap = true })
 vim.keymap.set("i", "<C-j>", "<Down>", { noremap = true })
 vim.keymap.set("i", "<C-k>", "<Up>", { noremap = true })
 vim.keymap.set("", "<C-l>", "<Right>", { noremap = true })
+
 -- Lspsaga
 vim.api.nvim_set_keymap(
 	"n",
@@ -28,9 +33,12 @@ vim.api.nvim_set_keymap(
 	"<cmd>Lspsaga code_action<CR>",
 	{ desc = "code [A]ction", noremap = true, silent = true }
 )
+
 vim.api.nvim_set_keymap("n", "K", "<cmd>Lspsaga hover_doc<CR>", { noremap = true, silent = true })
+
 -- Doxygen
 vim.api.nvim_set_keymap("n", "<leader>o", "<cmd>Dox<CR>", { desc = "D[o]xygen", noremap = true, silent = true })
+
 -- Terminal
 vim.api.nvim_set_keymap("", "<C-t>", "<cmd>Lspsaga term_toggle<CR>", { noremap = true, silent = true })
 vim.keymap.set("t", "<C-t>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
@@ -51,7 +59,7 @@ vim.opt.hlsearch = true -- Highlight found searches
 vim.opt.incsearch = true -- Shows the match while typing
 
 -- Parser settings
-vim.opt.runtimepath:append("~/.local/share/nvim/site/pack/packer/start/nvim-treesitter/parser")
+-- vim.opt.runtimepath:append("~/.local/share/nvim/site/pack/packer/start/nvim-treesitter/parser")
 
 -- UI Settings
 vim.opt.number = true -- Show line numbers
@@ -93,6 +101,37 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 vim.opt.termguicolors = true
 
+-- gotmpl
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	group = vim.api.nvim_create_augroup("gotmpl_highlight", { clear = true }),
+	pattern = "*.tmpl",
+	callback = function()
+		local filename = vim.fn.expand("%:t")
+		local ext = filename:match(".*%.(.-)%.tmpl$")
+
+		-- Add more extension to syntax mappings here if you need to.
+		local ext_filetypes = {
+			go = "go",
+			html = "html",
+			md = "markdown",
+			yaml = "yaml",
+			yml = "yaml",
+		}
+
+		if ext and ext_filetypes[ext] then
+			-- Set the primary filetype
+			vim.bo.filetype = ext_filetypes[ext]
+
+			-- Define embedded Go template syntax
+			vim.cmd([[
+        syntax include @gotmpl syntax/gotmpl.vim
+        syntax region gotmpl start="{{" end="}}" contains=@gotmpl containedin=ALL
+        syntax region gotmpl start="{%" end="%}" contains=@gotmpl containedin=ALL
+      ]])
+		end
+	end,
+})
+
 -- Lazy installer
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -107,7 +146,6 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Plugins setup
 require("lazy").setup({
 
 	-- Universal Yank
@@ -151,6 +189,11 @@ require("lazy").setup({
 			end)
 		end,
 	},
+
+	--	-- kage
+	--	"sedyh/ebitengine-kage-vim",
+	--	"jayli/vim-easycomplete",
+	--	"SirVer/ultisnips",
 
 	-- folke
 	{
@@ -403,11 +446,15 @@ require("lazy").setup({
 			})
 			local capabilities = require("blink.cmp").get_lsp_capabilities()
 			local servers = {
-				-- clangd = {},
-				-- gopls = {},
+				clangd = {},
+				gopls = {
+					filetypes = { "go", "gomod", "gotmpl" },
+				},
+				ts_ls = {
+					filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+				},
 				-- pyright = {},
 				-- rust_analyzer = {},
-				-- ts_ls = {},
 				lua_ls = {
 					settings = {
 						Lua = {
@@ -483,6 +530,7 @@ require("lazy").setup({
 		"saghen/blink.cmp",
 		event = "VimEnter",
 		version = "1.*",
+		build = "cargo +nightly build --release",
 		dependencies = {
 			{
 				"L3MON4D3/LuaSnip",
@@ -586,7 +634,90 @@ require("lazy").setup({
 			require("vague").setup({})
 		end,
 	},
+	{
+		"rose-pine/neovim",
+		as = "rose-pine",
+		config = function()
+			require("rose-pine").setup({
+				highlight_groups = {
+					Normal = { bg = "#061111" },
+					NormalNC = { bg = "#061111" },
+				},
+				transparency = true,
+
+				palette = {
+					-- Override the builtin palette per variant
+					moon = {
+						base = "#18191a",
+					},
+				},
+			})
+		end,
+	},
+
+	--	-- Unreal Engine
+	--	{
+	--		"mbwilding/UnrealEngine.nvim",
+	--		lazy = false,
+	--		dependencies = {
+	--			-- optional, this registers the Unreal Engine icon to .uproject files
+	--			"nvim-tree/nvim-web-devicons",
+	--		},
+	--		keys = {
+	--			{
+	--				"<leader>ug",
+	--				function()
+	--					require("unrealengine.commands").generate_lsp()
+	--				end,
+	--				desc = "UnrealEngine: Generate LSP",
+	--			},
+	--			{
+	--				"<leader>ub",
+	--				function()
+	--					require("unrealengine.commands").build()
+	--				end,
+	--				desc = "UnrealEngine: Build",
+	--			},
+	--			{
+	--				"<leader>ur",
+	--				function()
+	--					require("unrealengine.commands").rebuild()
+	--				end,
+	--				desc = "UnrealEngine: Rebuild",
+	--			},
+	--			{
+	--				"<leader>uo",
+	--				function()
+	--					require("unrealengine.commands").open()
+	--				end,
+	--				desc = "UnrealEngine: Open",
+	--			},
+	--			{
+	--				"<leader>uc",
+	--				function()
+	--					require("unrealengine.commands").clean()
+	--				end,
+	--				desc = "UnrealEngine: Clean",
+	--			},
+	--		},
+	--		opts = {
+	--			auto_generate = false, -- Auto generates LSP info when detected in CWD | default: false
+	--			auto_build = false, -- Auto builds on save | default: false
+	--			engine_path = "/home/jonne/repos/unrealengine", -- Path to your UnrealEngine source directory, you can also provide a table of strings
+	--			close_on_success = true,
+	--			env = { -- Add environment variables here
+	--				RADV_DEBUG = "hang", -- Add the AMD GPU Vulkan crash fix
+	--			},
+	--		},
+	--	},
 })
 
 -- Set the color scheme after initializing the plugins
-vim.cmd.colorscheme("vague")
+vim.cmd.colorscheme("rose-pine-moon")
+
+-- Unreal
+require("plugins.unreal").setup({
+	engine_path = vim.fn.has("win32") == 1 and "C:\\Users\\jovuorel\\UnrealEngine"
+		or os.getenv("HOME") .. "/repos/unrealengine",
+	format_on_save = false,
+})
