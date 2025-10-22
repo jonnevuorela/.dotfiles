@@ -52,11 +52,10 @@ vim.opt.tabstop = 3 -- Number of spaces for tab
 vim.opt.smartindent = true -- Smart autoindenting
 vim.g.have_nerd_font = true -- Enable nerd font support
 vim.opt.clipboard = "unnamedplus" -- Use system clipboard
-vim.opt.termguicolors = true -- Enable 24-bit RGB colors
-vim.opt.syntax = "on" -- Enable syntax highlighting
 vim.opt.hidden = true -- Enable background buffers
 vim.opt.hlsearch = true -- Highlight found searches
 vim.opt.incsearch = true -- Shows the match while typing
+vim.opt.syntax = "on" -- Enable syntax highlighting
 
 -- Parser settings
 -- vim.opt.runtimepath:append("~/.local/share/nvim/site/pack/packer/start/nvim-treesitter/parser")
@@ -99,52 +98,52 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 		vim.highlight.on_yank()
 	end,
 })
-vim.opt.termguicolors = true
+vim.opt.termguicolors = false
 
--- gotmpl
-vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-	group = vim.api.nvim_create_augroup("gotmpl_highlight", { clear = true }),
-	pattern = "*.tmpl",
-	callback = function()
-		local filename = vim.fn.expand("%:t")
-		local ext = filename:match(".*%.(.-)%.tmpl$")
-
-		-- Add more extension to syntax mappings here if you need to.
-		local ext_filetypes = {
-			go = "go",
-			html = "html",
-			md = "markdown",
-			yaml = "yaml",
-			yml = "yaml",
-		}
-
-		if ext and ext_filetypes[ext] then
-			-- Set the primary filetype
-			vim.bo.filetype = ext_filetypes[ext]
-
-			-- Define embedded Go template syntax
-			vim.cmd([[
-        syntax include @gotmpl syntax/gotmpl.vim
-        syntax region gotmpl start="{{" end="}}" contains=@gotmpl containedin=ALL
-        syntax region gotmpl start="{%" end="%}" contains=@gotmpl containedin=ALL
-      ]])
-		end
-	end,
-})
+--  -- gotmpl
+--   vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+--      group = vim.api.nvim_create_augroup("gotmpl_highlight", { clear = true }),
+--      pattern = "*.tmpl",
+--      callback = function()
+--         local filename = vim.fn.expand("%:t")
+--         local ext = filename:match(".*%.(.-)%.tmpl$")
+--
+--         -- Add more extension to syntax mappings here if you need to.
+--         local ext_filetypes = {
+--            go = "go",
+--            html = "html",
+--            md = "markdown",
+--            yaml = "yaml",
+--            yml = "yaml",
+--         }
+--
+--         if ext and ext_filetypes[ext] then
+--            -- Set the primary filetype
+--            vim.bo.filetype = ext_filetypes[ext]
+--
+--            -- Define embedded Go template syntax
+--            vim.cmd([[
+--           syntax include @gotmpl syntax/gotmpl.vim
+--           syntax region gotmpl start="{{" end="}}" contains=@gotmpl containedin=ALL
+--           syntax region gotmpl start="{%" end="%}" contains=@gotmpl containedin=ALL
+--         ]])
+--         end
+--      end,
+--   })
 
 -- Lazy installer
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-	vim.fn.system({
-		"git",
-		"clone",
-		"--filter=blob:none",
-		"https://github.com/folke/lazy.nvim.git",
-		"--branch=stable", -- latest stable release
-		lazypath,
-	})
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+	local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+	local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+	if vim.v.shell_error ~= 0 then
+		error("Error cloning lazy.nvim:\n" .. out)
+	end
 end
-vim.opt.rtp:prepend(lazypath)
+
+---@type vim.Option
+local rtp = vim.opt.rtp
+rtp:prepend(lazypath)
 
 require("lazy").setup({
 
@@ -152,7 +151,7 @@ require("lazy").setup({
 	{
 		"ojroques/vim-oscyank",
 		config = function()
-			vim.g.oscyank_term = "kitty"
+			vim.g.oscyank_term = "ghostty"
 			vim.g.oscyank_autocopy = 1
 		end,
 	},
@@ -194,6 +193,16 @@ require("lazy").setup({
 	--	"sedyh/ebitengine-kage-vim",
 	--	"jayli/vim-easycomplete",
 	--	"SirVer/ultisnips",
+	-- "RaafatTurki/hex.nvim",
+
+	{
+		"olexsmir/gopher.nvim",
+		ft = "go",
+		config = function(_, opts)
+			require("gopher").setup(opts)
+		end,
+		build = function() end,
+	},
 
 	-- folke
 	{
@@ -230,6 +239,7 @@ require("lazy").setup({
 		event = "InsertEnter",
 		config = true,
 	},
+
 	-- Harpoon™
 	{
 		"ThePrimeagen/harpoon",
@@ -285,18 +295,37 @@ require("lazy").setup({
 			{ "nvim-tree/nvim-web-devicons", enabled = vim.g.have_nerd_font },
 		},
 		config = function()
+			-- Telescope is a fuzzy finder that comes with a lot of different things that
+			-- it can fuzzy find! It's more than just a "file finder", it can search
+			-- many different aspects of Neovim, your workspace, LSP, and more!
+			--
+			-- The easiest way to use Telescope, is to start by doing something like:
+			--  :Telescope help_tags
+			--
+			-- After running this command, a window will open up and you're able to
+			-- type in the prompt window. You'll see a list of `help_tags` options and
+			-- a corresponding preview of the help.
+			--
+			-- Two important keymaps to use while in Telescope are:
+			--  - Insert mode: <c-/>
+			--  - Normal mode: ?
+			--
+			-- This opens a window that shows you all of the keymaps for the current
+			-- Telescope picker. This is really useful to discover what Telescope can
+			-- do as well as how to actually do it!
+
+			-- [[ Configure Telescope ]]
+			-- See `:help telescope` and `:help telescope.setup()`
 			require("telescope").setup({
-				pickers = {
-					current_buffer_fuzzy_find = {
-						theme = "dropdown",
-						winblend = 10,
-						previewer = false,
-					},
-					live_grep = {
-						grep_open_files = true,
-						prompt_title = "Live Grep in Open Files",
-					},
-				},
+				-- You can put your default mappings / updates / etc. in here
+				--  All the info you're looking for is in `:help telescope.setup()`
+				--
+				-- defaults = {
+				--   mappings = {
+				--     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+				--   },
+				-- },
+				-- pickers = {}
 				extensions = {
 					["ui-select"] = {
 						require("telescope.themes").get_dropdown(),
@@ -304,9 +333,11 @@ require("lazy").setup({
 				},
 			})
 
+			-- Enable Telescope extensions if they are installed
 			pcall(require("telescope").load_extension, "fzf")
 			pcall(require("telescope").load_extension, "ui-select")
 
+			-- See `:help telescope.builtin`
 			local builtin = require("telescope.builtin")
 			vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "[S]earch [H]elp" })
 			vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "[S]earch [K]eymaps" })
@@ -316,25 +347,53 @@ require("lazy").setup({
 			vim.keymap.set("n", "<leader>sg", builtin.live_grep, { desc = "[S]earch by [G]rep" })
 			vim.keymap.set("n", "<leader>sd", builtin.diagnostics, { desc = "[S]earch [D]iagnostics" })
 			vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "[S]earch [R]esume" })
-			vim.keymap.set("n", "<leader>sx", builtin.oldfiles, { desc = '[S]earch Recent Files ("[X]" for repeat)' })
+			vim.keymap.set("n", "<leader>s.", builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
 			vim.keymap.set("n", "<leader><leader>", builtin.buffers, { desc = "[ ] Find existing buffers" })
-			vim.keymap.set("n", "<leader>/", builtin.current_buffer_fuzzy_find, { desc = "[/] Fzf in current buffer" })
-			vim.keymap.set("n", "<leader>s/", builtin.live_grep, { desc = "[S]earch [/] in Open Files" })
 
+			-- Slightly advanced example of overriding default behavior and theme
+			vim.keymap.set("n", "<leader>/", function()
+				-- You can pass additional configuration to Telescope to change the theme, layout, etc.
+				builtin.current_buffer_fuzzy_find(require("telescope.themes").get_dropdown({
+					winblend = 10,
+					previewer = false,
+				}))
+			end, { desc = "[/] Fuzzily search in current buffer" })
+
+			-- It's also possible to pass additional configuration options.
+			--  See `:help telescope.builtin.live_grep()` for information about particular keys
+			vim.keymap.set("n", "<leader>s/", function()
+				builtin.live_grep({
+					grep_open_files = true,
+					prompt_title = "Live Grep in Open Files",
+				})
+			end, { desc = "[S]earch [/] in Open Files" })
+
+			-- Shortcut for searching your Neovim configuration files
 			vim.keymap.set("n", "<leader>sn", function()
 				builtin.find_files({ cwd = vim.fn.stdpath("config") })
 			end, { desc = "[S]earch [N]eovim files" })
 		end,
 	},
 
-	-- Main LSP Configuration
+	-- LSP Plugins
+	{
+		"folke/lazydev.nvim",
+		ft = "lua",
+		opts = {
+			library = {
+				{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
+			},
+		},
+	},
 	{
 		"neovim/nvim-lspconfig",
 		dependencies = {
-			{ "williamboman/mason.nvim", opts = {} },
-			"williamboman/mason-lspconfig.nvim",
+			{ "mason-org/mason.nvim", opts = {} },
+			"mason-org/mason-lspconfig.nvim",
 			"WhoIsSethDaniel/mason-tool-installer.nvim",
+
 			{ "j-hui/fidget.nvim", opts = {} },
+
 			"saghen/blink.cmp",
 		},
 		config = function()
@@ -345,25 +404,30 @@ require("lazy").setup({
 						mode = mode or "n"
 						vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
 					end
-					map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 
-					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction", { "n", "x" })
-					map("gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
-					map("gi", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
-					map("gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
-					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-					map("gt", require("telescope.builtin").lsp_type_definitions, "[G]oto [T]ype Definition")
-					map("od", require("telescope.builtin").lsp_document_symbols, "[O]pen [D]ocument Symbols")
-					map(
-						"<leader>ow",
-						require("telescope.builtin").lsp_dynamic_workspace_symbols,
-						"[O]pen [W]orkspace Symbols"
-					)
+					map("grn", vim.lsp.buf.rename, "[R]e[n]ame")
 
-					-- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
+					map("gra", vim.lsp.buf.code_action, "[G]oto Code [A]ction", { "n", "x" })
+
+					map("grr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
+
+					map("gri", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
+
+					map("grd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
+
+					-- WARN: This is not Goto Definition, this is Goto Declaration.
+					--  For example, in C this would take you to the header.
+					map("grD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
+
+					map("gO", require("telescope.builtin").lsp_document_symbols, "Open Document Symbols")
+
+					map("gW", require("telescope.builtin").lsp_dynamic_workspace_symbols, "Open Workspace Symbols")
+
+					map("grt", require("telescope.builtin").lsp_type_definitions, "[G]oto [T]ype Definition")
+
 					---@param client vim.lsp.Client
 					---@param method vim.lsp.protocol.Method
-					---@param bufnr? integer some lsp support methods only in specific files
+					---@param bufnr? integer
 					---@return boolean
 					local function client_supports_method(client, method, bufnr)
 						if vim.fn.has("nvim-0.11") == 1 then
@@ -382,8 +446,7 @@ require("lazy").setup({
 							event.buf
 						)
 					then
-						local highlight_augroup =
-							vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
+						local highlight_augroup = vim.api.nvim_create_augroup("lsp-highlight", { clear = false })
 						vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 							buffer = event.buf,
 							group = highlight_augroup,
@@ -397,10 +460,10 @@ require("lazy").setup({
 						})
 
 						vim.api.nvim_create_autocmd("LspDetach", {
-							group = vim.api.nvim_create_augroup("kickstart-lsp-detach", { clear = true }),
+							group = vim.api.nvim_create_augroup("lsp-detach", { clear = true }),
 							callback = function(event2)
 								vim.lsp.buf.clear_references()
-								vim.api.nvim_clear_autocmds({ group = "kickstart-lsp-highlight", buffer = event2.buf })
+								vim.api.nvim_clear_autocmds({ group = "lsp-highlight", buffer = event2.buf })
 							end,
 						})
 					end
@@ -416,8 +479,6 @@ require("lazy").setup({
 				end,
 			})
 
-			-- Diagnostic Config
-			-- See :help vim.diagnostic.Opts
 			vim.diagnostic.config({
 				severity_sort = true,
 				float = { border = "rounded", source = "if_many" },
@@ -444,24 +505,32 @@ require("lazy").setup({
 					end,
 				},
 			})
+
 			local capabilities = require("blink.cmp").get_lsp_capabilities()
+
 			local servers = {
-				clangd = {},
-				gopls = {
-					filetypes = { "go", "gomod", "gotmpl" },
-				},
-				ts_ls = {
-					filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
-				},
+				-- clangd = {},
+				-- gopls = {},
 				-- pyright = {},
 				-- rust_analyzer = {},
+				--
+				-- Some languages (like typescript) have entire language plugins that can be useful:
+				--    https://github.com/pmizio/typescript-tools.nvim
+				--
+				-- But for many setups, the LSP (`ts_ls`) will work just fine
+				-- ts_ls = {},
+				--
+
 				lua_ls = {
+					-- cmd = { ... },
+					-- filetypes = { ... },
+					-- capabilities = {},
 					settings = {
 						Lua = {
 							completion = {
 								callSnippet = "Replace",
 							},
-							diagnostics = { disable = { "missing-fields" } },
+							-- diagnostics = { disable = { 'missing-fields' } },
 						},
 					},
 				},
@@ -469,12 +538,12 @@ require("lazy").setup({
 
 			local ensure_installed = vim.tbl_keys(servers or {})
 			vim.list_extend(ensure_installed, {
-				"stylua",
+				"stylua", -- Used to format Lua code
 			})
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 			require("mason-lspconfig").setup({
-				ensure_installed = {}, -- explicitly set to an empty table
+				ensure_installed = {},
 				automatic_installation = false,
 				handlers = {
 					function(server_name)
@@ -487,8 +556,7 @@ require("lazy").setup({
 		end,
 	},
 
-	-- Autoformat
-	{
+	{ -- Autoformat
 		"stevearc/conform.nvim",
 		event = { "BufWritePre" },
 		cmd = { "ConformInfo" },
@@ -525,13 +593,12 @@ require("lazy").setup({
 		},
 	},
 
-	-- Autocompletion
-	{
+	{ -- Autocompletion
 		"saghen/blink.cmp",
 		event = "VimEnter",
 		version = "1.*",
-		build = "cargo +nightly build --release",
 		dependencies = {
+			-- Snippet Engine
 			{
 				"L3MON4D3/LuaSnip",
 				version = "2.*",
@@ -559,12 +626,14 @@ require("lazy").setup({
 			keymap = {
 				preset = "enter",
 			},
+
 			appearance = {
 				nerd_font_variant = "mono",
 			},
 
 			completion = {
 				accept = { auto_brackets = { enabled = true } },
+				documentation = { auto_show = false, auto_show_delay_ms = 500 },
 				menu = {
 					auto_show = true,
 					-- nvim-cmp style menu
@@ -579,9 +648,6 @@ require("lazy").setup({
 						},
 					},
 				},
-				documentation = { auto_show = true, auto_show_delay_ms = 500 },
-
-				-- Display a preview of the selected item on the current line
 				ghost_text = { enabled = true },
 			},
 
@@ -592,7 +658,8 @@ require("lazy").setup({
 				},
 			},
 
-			snippets = { preset = "default" },
+			snippets = { preset = "luasnip" },
+
 			fuzzy = { implementation = "lua" },
 
 			signature = { enabled = true },
@@ -602,29 +669,25 @@ require("lazy").setup({
 	-- Treesitter
 	{
 		"nvim-treesitter/nvim-treesitter",
+		branch = "master",
+		lazy = false,
 		build = ":TSUpdate",
+
+		event = { "VeryLazy" },
 		main = "nvim-treesitter.configs",
 		opts = {
-			ensure_installed = {
-				"bash",
-				"c",
-				"diff",
-				"html",
-				"lua",
-				"luadoc",
-				"markdown",
-				"markdown_inline",
-				"query",
-				"vim",
-				"vimdoc",
-			},
+			ensure_installed = "all",
 			auto_install = true,
 			highlight = {
 				enable = true,
-				additional_vim_regex_highlighting = { "ruby" },
 			},
-			indent = { enable = true, disable = { "ruby" } },
+			indent = { enable = true },
+			ignore_install = { "ipkg" },
 		},
+		config = function(_, opts)
+			require("nvim-treesitter.configs").setup(opts)
+			require("nvim-treesitter.install").prefer_git = true
+		end,
 	},
 
 	-- Color schemes
@@ -636,10 +699,9 @@ require("lazy").setup({
 	},
 	{
 		"rose-pine/neovim",
-		as = "rose-pine",
 		config = function()
 			require("rose-pine").setup({
-				highlight_groups = {
+				{
 					Normal = { bg = "#061111" },
 					NormalNC = { bg = "#061111" },
 				},
@@ -711,7 +773,17 @@ require("lazy").setup({
 	--		},
 	--	},
 })
-
+-- After your LSP config section, add:
+vim.api.nvim_create_autocmd("ColorScheme", {
+	callback = function()
+		-- Customize LSP related highlights
+		vim.api.nvim_set_hl(0, "@lsp.type.variable", { link = "Variable" })
+		vim.api.nvim_set_hl(0, "@lsp.type.parameter", { link = "Parameter" })
+		vim.api.nvim_set_hl(0, "@lsp.type.function", { link = "Function" })
+		vim.api.nvim_set_hl(0, "@lsp.type.method", { link = "Method" })
+		vim.api.nvim_set_hl(0, "@lsp.type.type", { link = "Type" })
+	end,
+})
 -- Set the color scheme after initializing the plugins
 vim.cmd.colorscheme("rose-pine-moon")
 
