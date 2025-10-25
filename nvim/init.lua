@@ -293,7 +293,7 @@ require("lazy").setup({
 		keys = {
 			-- Top Pickers & Explorer
 			{
-				"<leader>,",
+				"<leader>sf",
 				function()
 					Snacks.picker.smart()
 				end,
@@ -353,7 +353,7 @@ require("lazy").setup({
 				desc = "Find Files",
 			},
 			{
-				"<leader>sf",
+				"<leader>,",
 				function()
 					Snacks.picker.files()
 				end,
@@ -910,7 +910,7 @@ require("lazy").setup({
 			{
 				"<leader>F",
 				function()
-					require("conform").format({ async = true })
+					require("conform").format({ async = true, lsp_format = "fallback" })
 				end,
 				mode = "",
 				desc = "[F]ormat buffer",
@@ -931,6 +931,8 @@ require("lazy").setup({
 			formatters_by_ft = {
 				lua = { "stylua" },
 				cs = { "csharpier" },
+				go = { "goimports" },
+				javascript = { lsp_format = "fallback" },
 				-- python = { "isort", "black" },
 				-- You can use 'stop_after_first' to run the first available formatter from the list
 				-- javascript = { "prettierd", "prettier", stop_after_first = true },
