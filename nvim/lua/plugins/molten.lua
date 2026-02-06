@@ -54,12 +54,56 @@ return {
 			local opts = { noremap = true, silent = true }
 			local map = vim.keymap.set
 
-			-- Helper function to evaluate cell (uses operator with 'ip' motion)
+			-- Helper function to find cell boundaries based on # %% delimiters
+			local function get_cell_range()
+				local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+				local total_lines = vim.api.nvim_buf_line_count(0)
+
+				-- Find the start of current cell (look backwards for # %%)
+				local cell_start = cursor_line
+				for i = cursor_line, 1, -1 do
+					local line = vim.api.nvim_buf_get_lines(0, i - 1, i, false)[1]
+					if line and line:match("^# %%%%") then
+						cell_start = i + 1 -- Start after the delimiter
+						break
+					end
+					if i == 1 then
+						cell_start = 1 -- If we reach the top without finding delimiter
+					end
+				end
+
+				-- Find the end of current cell (look forwards for next # %%)
+				local cell_end = total_lines
+				for i = cursor_line + 1, total_lines do
+					local line = vim.api.nvim_buf_get_lines(0, i - 1, i, false)[1]
+					if line and line:match("^# %%%%") then
+						cell_end = i - 1 -- End before the next delimiter
+						break
+					end
+				end
+
+				return cell_start, cell_end
+			end
+
+			-- Helper function to evaluate cell based on # %% delimiters
+			-- Helper function to evaluate cell based on # %% delimiters
 			local function eval_cell()
-				local cursor = vim.api.nvim_win_get_cursor(0)
-				vim.cmd("normal! vip")
+				local cursor_pos = vim.api.nvim_win_get_cursor(0)
+				local cell_start, cell_end = get_cell_range()
+
+				-- Select the cell range
+				vim.api.nvim_win_set_cursor(0, { cell_start, 0 })
+				vim.cmd("normal! V")
+				vim.api.nvim_win_set_cursor(0, { cell_end, 0 })
+
+				-- Evaluate the visual selection
 				vim.cmd("MoltenEvaluateVisual")
-				vim.api.nvim_win_set_cursor(0, cursor)
+
+				-- Clear selection and return to normal mode
+				vim.cmd("normal! \\<Esc>")
+
+				-- Restore cursor position
+				pcall(vim.api.nvim_win_set_cursor, 0, cursor_pos)
 			end
 
 			-- Helper function to evaluate and move to next cell
@@ -86,7 +130,6 @@ return {
 			map("n", "<leader>mf", function()
 				vim.cmd("MoltenInfo")
 			end, { noremap = true, silent = true, desc = "Show Molten kernel info" })
-
 			-- Quick notebook creation
 			map("n", "<leader>mN", ":NewNotebookHere ", { noremap = true, desc = "New notebook in current dir" })
 
