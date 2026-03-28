@@ -1,0 +1,362 @@
+-- Nokia-style Worm Game for Neovim
+-- A fully-featured snake game that opens in its own buffer
+
+local M = {}
+
+-- Game constants
+local GAME_WIDTH = 40
+local GAME_HEIGHT = 20
+local TICK_RATE = 100 -- milliseconds
+local WALL_CHAR = "█"
+local SNAKE_HEAD_CHAR = "▓"
+local SNAKE_BODY_CHAR = "▒"
+local FOOD_CHAR = "◆"
+local EMPTY_CHAR = " "
+
+-- Game state
+local game_state = {
+	running = false,
+	score = 0,
+	high_score = 0,
+	snake = {},
+	direction = "right",
+	next_direction = "right",
+	food = nil,
+	game_over = false,
+	bufnr = nil,
+	winid = nil,
+	timer = nil,
+}
+
+-- Direction vectors
+local directions = {
+	up = { x = 0, y = -1 },
+	down = { x = 0, y = 1 },
+	left = { x = -1, y = 0 },
+	right = { x = 1, y = 0 },
+}
+
+-- Opposite directions (to prevent reversing)
+local opposites = {
+	up = "down",
+	down = "up",
+	left = "right",
+	right = "left",
+}
+
+-- Spawn food at random location
+local function spawn_food()
+	local valid_position = false
+	local food_x, food_y
+
+	while not valid_position do
+		food_x = math.random(1, GAME_WIDTH - 2)
+		food_y = math.random(1, GAME_HEIGHT - 2)
+		valid_position = true
+
+		-- Check if food spawns on snake
+		for _, segment in ipairs(game_state.snake) do
+			if segment.x == food_x and segment.y == food_y then
+				valid_position = false
+				break
+			end
+		end
+	end
+
+	game_state.food = { x = food_x, y = food_y }
+end
+
+-- Initialize game state
+local function init_game()
+	game_state.running = true
+	game_state.score = 0
+	game_state.game_over = false
+	game_state.direction = "right"
+	game_state.next_direction = "right"
+
+	-- Initialize snake in the middle
+	local start_x = math.floor(GAME_WIDTH / 2)
+	local start_y = math.floor(GAME_HEIGHT / 2)
+	game_state.snake = {
+		{ x = start_x, y = start_y },
+		{ x = start_x - 1, y = start_y },
+		{ x = start_x - 2, y = start_y },
+	}
+
+	-- Spawn first food
+	spawn_food()
+end
+
+-- Render the game to buffer
+local function render_game()
+	if not game_state.bufnr or not vim.api.nvim_buf_is_valid(game_state.bufnr) then
+		return
+	end
+
+	local lines = {}
+
+	-- Header with HUD
+	local header =
+		string.format("  NOKIA WORM  │  SCORE: %d  │  HIGH: %d  ", game_state.score, game_state.high_score)
+	table.insert(lines, header)
+	table.insert(lines, string.rep("─", GAME_WIDTH))
+
+	-- Game area
+	for y = 0, GAME_HEIGHT - 1 do
+		local line = ""
+		for x = 0, GAME_WIDTH - 1 do
+			-- Check if position is wall
+			if x == 0 or x == GAME_WIDTH - 1 or y == 0 or y == GAME_HEIGHT - 1 then
+				line = line .. WALL_CHAR
+			-- Check if position is snake head
+			elseif game_state.snake[1].x == x and game_state.snake[1].y == y then
+				line = line .. SNAKE_HEAD_CHAR
+			-- Check if position is snake body
+			else
+				local is_body = false
+				for i = 2, #game_state.snake do
+					if game_state.snake[i].x == x and game_state.snake[i].y == y then
+						line = line .. SNAKE_BODY_CHAR
+						is_body = true
+						break
+					end
+				end
+				-- Check if position is food
+				if not is_body then
+					if game_state.food and game_state.food.x == x and game_state.food.y == y then
+						line = line .. FOOD_CHAR
+					else
+						line = line .. EMPTY_CHAR
+					end
+				end
+			end
+		end
+		table.insert(lines, line)
+	end
+
+	-- Footer
+	table.insert(lines, string.rep("─", GAME_WIDTH))
+
+	if game_state.game_over then
+		table.insert(lines, "  GAME OVER! Press 'r' to restart, 'q' to quit  ")
+	else
+		table.insert(lines, "  Controls: h/j/k/l or arrows │ r: restart │ q: quit  ")
+	end
+
+	-- Update buffer
+	vim.api.nvim_buf_set_option(game_state.bufnr, "modifiable", true)
+	vim.api.nvim_buf_set_lines(game_state.bufnr, 0, -1, false, lines)
+	vim.api.nvim_buf_set_option(game_state.bufnr, "modifiable", false)
+end
+
+-- Update game logic
+local function update_game()
+	if game_state.game_over or not game_state.running then
+		return
+	end
+
+	-- Update direction
+	game_state.direction = game_state.next_direction
+
+	-- Calculate new head position
+	local head = game_state.snake[1]
+	local dir = directions[game_state.direction]
+	local new_head = {
+		x = head.x + dir.x,
+		y = head.y + dir.y,
+	}
+
+	-- Check wall collision
+	if new_head.x <= 0 or new_head.x >= GAME_WIDTH - 1 or new_head.y <= 0 or new_head.y >= GAME_HEIGHT - 1 then
+		game_state.game_over = true
+		if game_state.score > game_state.high_score then
+			game_state.high_score = game_state.score
+		end
+		render_game()
+		return
+	end
+
+	-- Check self collision
+	for _, segment in ipairs(game_state.snake) do
+		if new_head.x == segment.x and new_head.y == segment.y then
+			game_state.game_over = true
+			if game_state.score > game_state.high_score then
+				game_state.high_score = game_state.score
+			end
+			render_game()
+			return
+		end
+	end
+
+	-- Insert new head
+	table.insert(game_state.snake, 1, new_head)
+
+	-- Check food collision
+	if game_state.food and new_head.x == game_state.food.x and new_head.y == game_state.food.y then
+		game_state.score = game_state.score + 10
+		spawn_food()
+	else
+		-- Remove tail if no food eaten
+		table.remove(game_state.snake)
+	end
+
+	render_game()
+end
+
+-- Start game loop
+local function start_game_loop()
+	if game_state.timer then
+		game_state.timer:stop()
+		game_state.timer:close()
+	end
+
+	game_state.timer = vim.loop.new_timer()
+	game_state.timer:start(
+		0,
+		TICK_RATE,
+		vim.schedule_wrap(function()
+			if game_state.running then
+				update_game()
+			end
+		end)
+	)
+end
+
+-- Stop game loop
+local function stop_game_loop()
+	if game_state.timer then
+		game_state.timer:stop()
+		game_state.timer:close()
+		game_state.timer = nil
+	end
+	game_state.running = false
+end
+
+-- Change direction
+local function set_direction(dir)
+	if game_state.game_over then
+		return
+	end
+
+	-- Prevent reversing
+	if opposites[dir] ~= game_state.direction then
+		game_state.next_direction = dir
+	end
+end
+
+-- Setup keymaps for the game buffer
+local function setup_keymaps()
+	local opts = { buffer = game_state.bufnr, silent = true }
+
+	-- Movement
+	vim.keymap.set("n", "h", function()
+		set_direction("left")
+	end, opts)
+	vim.keymap.set("n", "j", function()
+		set_direction("down")
+	end, opts)
+	vim.keymap.set("n", "k", function()
+		set_direction("up")
+	end, opts)
+	vim.keymap.set("n", "l", function()
+		set_direction("right")
+	end, opts)
+	vim.keymap.set("n", "<Left>", function()
+		set_direction("left")
+	end, opts)
+	vim.keymap.set("n", "<Down>", function()
+		set_direction("down")
+	end, opts)
+	vim.keymap.set("n", "<Up>", function()
+		set_direction("up")
+	end, opts)
+	vim.keymap.set("n", "<Right>", function()
+		set_direction("right")
+	end, opts)
+
+	-- Restart
+	vim.keymap.set("n", "r", function()
+		init_game()
+		render_game()
+	end, opts)
+
+	-- Quit
+	vim.keymap.set("n", "q", function()
+		stop_game_loop()
+		if game_state.winid and vim.api.nvim_win_is_valid(game_state.winid) then
+			vim.api.nvim_win_close(game_state.winid, true)
+		end
+		if game_state.bufnr and vim.api.nvim_buf_is_valid(game_state.bufnr) then
+			vim.api.nvim_buf_delete(game_state.bufnr, { force = true })
+		end
+		game_state.bufnr = nil
+		game_state.winid = nil
+	end, opts)
+end
+
+-- Create game window
+function M.open()
+	-- Stop any existing game
+	stop_game_loop()
+
+	-- Create buffer
+	game_state.bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_option(game_state.bufnr, "buftype", "nofile")
+	vim.api.nvim_buf_set_option(game_state.bufnr, "swapfile", false)
+	vim.api.nvim_buf_set_option(game_state.bufnr, "bufhidden", "wipe")
+	vim.api.nvim_buf_set_name(game_state.bufnr, "Worm Game")
+
+	-- Calculate window size
+	local width = GAME_WIDTH + 4
+	local height = GAME_HEIGHT + 6
+
+	-- Get editor dimensions
+	local editor_width = vim.o.columns
+	local editor_height = vim.o.lines
+
+	-- Calculate centered position
+	local row = math.floor((editor_height - height) / 2)
+	local col = math.floor((editor_width - width) / 2)
+
+	-- Create window
+	local win_opts = {
+		relative = "editor",
+		row = row,
+		col = col,
+		width = width,
+		height = height,
+		style = "minimal",
+		border = "double",
+		title = " WORM ",
+		title_pos = "center",
+	}
+
+	game_state.winid = vim.api.nvim_open_win(game_state.bufnr, true, win_opts)
+
+	-- Setup window options
+	vim.api.nvim_win_set_option(game_state.winid, "cursorline", false)
+	vim.api.nvim_win_set_option(game_state.winid, "cursorcolumn", false)
+	vim.api.nvim_win_set_option(game_state.winid, "number", false)
+	vim.api.nvim_win_set_option(game_state.winid, "relativenumber", false)
+	vim.api.nvim_win_set_option(game_state.winid, "signcolumn", "no")
+
+	-- Setup keymaps
+	setup_keymaps()
+
+	-- Initialize and start game
+	init_game()
+	render_game()
+	start_game_loop()
+end
+
+-- Setup command
+function M.setup()
+	vim.api.nvim_create_user_command("Worm", function()
+		M.open()
+	end, { desc = "Open Nokia-style Worm game" })
+end
+
+-- Auto-setup when loaded
+M.setup()
+
+return M

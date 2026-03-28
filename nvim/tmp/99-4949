@@ -1,0 +1,14 @@
+/home/jonne/.config/nvim/lua/plugins/worm.lua:1:1,228,Created Nokia-style worm game plugin with full game logic including snake movement food spawning collision detection scoring and HUD
+/home/jonne/.config/nvim/lua/plugins/worm.lua:40:1,3,Implemented game state management with running score high_score snake body direction food position game_over flag and buffer/window handles
+/home/jonne/.config/nvim/lua/plugins/worm.lua:76:1,2,Added spawn_food function to place food at random valid locations not occupied by snake body
+/home/jonne/.config/nvim/lua/plugins/worm.lua:97:1,15,Implemented init_game to reset game state create initial 3-segment snake and spawn first food item
+/home/jonne/.config/nvim/lua/plugins/worm.lua:121:1,47,Created render_game function to draw game board walls snake head and body food HUD with score and controls using box-drawing characters
+/home/jonne/.config/nvim/lua/plugins/worm.lua:175:1,53,Added update_game logic to move snake check wall and self collisions handle food eating grow snake and update score
+/home/jonne/.config/nvim/lua/plugins/worm.lua:229:1,10,Implemented start_game_loop using vim.loop.new_timer for 100ms game tick updates
+/home/jonne/.config/nvim/lua/plugins/worm.lua:239:1,7,Created stop_game_loop to clean up timer and stop game
+/home/jonne/.config/nvim/lua/plugins/worm.lua:247:1,8,Added set_direction function with reverse-direction prevention
+/home/jonne/.config/nvim/lua/plugins/worm.lua:256:1,29,Implemented setup_keymaps with hjkl and arrow key movement r to restart q to quit
+/home/jonne/.config/nvim/lua/plugins/worm.lua:286:1,44,Created M.open function to create centered floating window with double border title and initialize game
+/home/jonne/.config/nvim/lua/plugins/worm.lua:331:1,4,Added M.setup to register :Worm user command
+/home/jonne/.config/nvim/lua/plugins/worm.lua:337:1,5,Return lazy.nvim plugin spec with config function calling M.setup
+/home/jonne/.config/nvim/init.lua:172:1,1,Added require("plugins.worm") to lazy.nvim plugin setup list

@@ -1,0 +1,6 @@
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = vim.api.nvim_create_augroup("hello-toast", { clear = true }),
+	callback = function()
+		vim.notify("hello", vim.log.levels.INFO)
+	end,
+})

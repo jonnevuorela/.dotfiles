@@ -1,0 +1,1 @@
+/home/jonne/.config/nvim/lua/plugins/blink-cmp.lua:85:39,1,Removed invalid 'enabled' field from snippets configuration - blink.cmp does not accept this field in the snippets section

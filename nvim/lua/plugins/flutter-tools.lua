@@ -5,6 +5,7 @@ local function default_on_attach(client, bufnr)
 	local wk = vim.keymap
 	wk.set("n", "<leader>mr", "<cmd>FlutterRun<cr>", { buffer = bufnr, desc = "Flutter Run" })
 	wk.set("n", "<leader>ms", "<cmd>FlutterRestart<cr>", { buffer = bufnr, desc = "Flutter Restart" })
+	wk.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = bufnr, desc = "Code Action" })
 end
 
 local function default_capabilities()

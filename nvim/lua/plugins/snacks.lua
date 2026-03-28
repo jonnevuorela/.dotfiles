@@ -9,24 +9,21 @@ return {
 	opts = {
 		bigfile = { enabled = true },
 		dashboard = { enabled = true },
-		explorer = { enabled = false },
+		explorer = { enabled = true },
 		indent = { enabled = true },
 		input = { enabled = true },
 		image = { enabled = true },
 		notifier = { enabled = true, timeout = 3000 },
-		picker = { enabled = true, layout = "telescope" },
+		picker = { enabled = true },
 		quickfile = { enabled = true },
 		scope = { enabled = true },
-		scroll = { enabled = false },
+		scroll = { enabled = true },
+		dim = { enabled = true },
+		zen = { enabled = true },
+		animate = { enabled = true },
 		statuscolumn = { enabled = true },
 		words = { enabled = true },
 		styles = { notification = {} },
-		explorer = {
-			enabled = true,
-			replace_netrw = true, -- (default anyway) makes :Explore / :Sex use Snacks instead of netrw
-			-- hidden = false,       -- show dotfiles by default? (or toggle with . key)
-			-- layout = { ... },     -- window size/position if you want
-		},
 	},
 
 	-- key mappings: call require("snacks") inside functions to avoid global timing issues
@@ -283,13 +280,7 @@ return {
 			end,
 			desc = "Undo History",
 		},
-		{
-			"<leader>uC",
-			function()
-				require("snacks").picker.colorschemes()
-			end,
-			desc = "Colorschemes",
-		},
+		-- Colorscheme picker moved to persistent toggle mapping in init
 
 		-- LSP-ish helpers via Snacks
 		{
@@ -439,6 +430,8 @@ return {
 			pattern = "VeryLazy",
 			callback = function()
 				local s = require("snacks")
+				local defaults_io = require("config.defaults")
+				local defaults = { state = defaults_io.ensure() }
 
 				-- runtime debug helpers
 				_G.dd = function(...)
@@ -457,21 +450,197 @@ return {
 				end
 
 				-- toggles mapped at runtime
-				s.toggle.option("spell", { name = "Spelling" }):map("<leader>us")
-				s.toggle.option("wrap", { name = "Wrap" }):map("<leader>uw")
-				s.toggle.option("relativenumber", { name = "Relative Number" }):map("<leader>uL")
-				s.toggle.diagnostics():map("<leader>ud")
-				s.toggle.line_number():map("<leader>ul")
 				s.toggle
-					.option("conceallevel", { off = 0, on = vim.o.conceallevel > 0 and vim.o.conceallevel or 2 })
-					:map("<leader>uc")
-				s.toggle.treesitter():map("<leader>uT")
+					.option("spell", { name = "Spelling", global = true })
+					:map("<leader>us", { desc = "Toggle Spelling (persist)" })
 				s.toggle
-					.option("background", { off = "light", on = "dark", name = "Dark Background" })
-					:map("<leader>ub")
-				s.toggle.inlay_hints():map("<leader>uh")
-				s.toggle.indent():map("<leader>ug")
-				s.toggle.dim():map("<leader>uD")
+					.option("wrap", { name = "Wrap", global = true })
+					:map("<leader>uw", { desc = "Toggle Wrap (persist)" })
+				vim.keymap.set("n", "<leader>uL", function()
+					local next_state = not defaults.state.relativenumber
+					defaults.state.relativenumber = next_state
+					vim.opt.relativenumber = next_state
+					defaults_io.save(defaults.state, "relativenumber", next_state)
+					defaults_io.refresh_windows(defaults.state)
+				end, { desc = "Toggle Relative Number (persist)" })
+				s.toggle
+					.diagnostics()
+					:map("<leader>uE", { desc = "Toggle Diagnostics (persist)" })
+				vim.keymap.set("n", "<leader>ul", function()
+					local next_state = not defaults.state.line_number
+					defaults.state.line_number = next_state
+					vim.opt.number = next_state
+					defaults_io.save(defaults.state, "line_number", next_state)
+					defaults_io.refresh_windows(defaults.state)
+				end, { desc = "Toggle Line Numbers (persist)" })
+				local conceal_on = defaults.state.conceallevel or (vim.o.conceallevel > 0 and vim.o.conceallevel or 2)
+				s.toggle
+					.option("conceallevel", { off = 0, on = conceal_on, global = true })
+					:map("<leader>uo", { desc = "Toggle Conceal (persist)" })
+				s.toggle
+					.treesitter()
+					:map("<leader>uT", { desc = "Toggle Treesitter (persist)" })
+				s.toggle
+					.option("background", { off = "light", on = "dark", name = "Dark Background", global = true })
+					:map("<leader>ub", { desc = "Toggle Background (persist)" })
+				s.toggle
+					.inlay_hints()
+					:map("<leader>uh", { desc = "Toggle Inlay Hints (persist)" })
+				s.toggle
+					.indent()
+					:map("<leader>ug", { desc = "Toggle Indent Guides (persist)" })
+				s.toggle
+					.dim()
+					:map("<leader>uD", { desc = "Toggle Dim (persist)" })
+
+				s.toggle
+					.words()
+					:map("<leader>uM", { desc = "Toggle Words (persist)" })
+				s.toggle
+					.zen()
+					:map("<leader>uz", { desc = "Toggle Zen (persist)" })
+				s.toggle
+					.zoom()
+					:map("<leader>uZ", { desc = "Toggle Zoom (persist)" })
+				s.toggle
+					.scroll()
+					:map("<leader>uS", { desc = "Toggle Smooth Scroll (persist)" })
+				s.toggle
+					.animate()
+					:map("<leader>uA", { desc = "Toggle Animations (persist)" })
+				s.toggle
+					.option("cursorline", { name = "Cursorline", global = true })
+					:map("<leader>uc", { desc = "Toggle Cursorline (persist)" })
+				s.toggle
+					.option("list", { name = "Whitespace", global = true })
+					:map("<leader>uW", { desc = "Toggle Whitespace (persist)" })
+				s.toggle
+					.option("signcolumn", { off = "no", on = "yes", name = "Signcolumn", global = true })
+					:map("<leader>uI", { desc = "Toggle Signcolumn (persist)" })
+
+				vim.keymap.set("n", "<leader>uC", function()
+					require("snacks").picker.colorschemes({
+						confirm = function(picker, item)
+							picker:close()
+							if item then
+								picker.preview.state.colorscheme = nil
+								vim.schedule(function()
+									vim.cmd("colorscheme " .. item.text)
+									defaults.state.colorscheme = item.text
+									defaults_io.save(defaults.state, "colorscheme", item.text)
+								end)
+							end
+						end,
+					})
+				end, { desc = "Colorschemes (persist)" })
+
+				local function apply_snacks_state()
+					if defaults.state.animate ~= nil then
+						vim.g.snacks_animate = defaults.state.animate
+					end
+					if defaults.state.scroll ~= nil then
+						if defaults.state.scroll then
+							s.scroll.enable()
+						else
+							s.scroll.disable()
+						end
+					end
+					if defaults.state.dim ~= nil then
+						if defaults.state.dim then
+							s.dim.enable()
+						else
+							s.dim.disable()
+						end
+					end
+					if defaults.state.indent ~= nil then
+						if defaults.state.indent then
+							s.indent.enable()
+						else
+							s.indent.disable()
+						end
+					end
+					if defaults.state.words ~= nil then
+						if defaults.state.words then
+							s.words.enable()
+						else
+							s.words.disable()
+						end
+					end
+				end
+
+				local function persist_toggle(id, key)
+					local toggle = s.toggle.get(id)
+					if toggle then
+						local original_set = toggle.set
+						toggle.set = function(state)
+							original_set(state)
+							defaults_io.save(defaults.state, key, state)
+							defaults_io.refresh_windows(defaults.state)
+							apply_snacks_state()
+						end
+					end
+				end
+
+				local function persist_toggle_value(id, key, mapper)
+					local toggle = s.toggle.get(id)
+					if toggle then
+						local original_set = toggle.set
+						toggle.set = function(state)
+							original_set(state)
+							defaults_io.save(defaults.state, key, mapper(state))
+							defaults_io.refresh_windows(defaults.state)
+							apply_snacks_state()
+						end
+					end
+				end
+
+				persist_toggle("spell", "spell")
+				persist_toggle("wrap", "wrap")
+				persist_toggle("diagnostics", "diagnostics")
+				persist_toggle_value("conceallevel", "conceallevel", function(state)
+					return state and conceal_on or 0
+				end)
+				persist_toggle("treesitter", "treesitter")
+				persist_toggle_value("background", "background", function(state)
+					return state and "dark" or "light"
+				end)
+				local function persist_inlay_hints()
+					local toggle = s.toggle.get("inlay_hints")
+					if toggle then
+						local original_set = toggle.set
+						toggle.set = function(state)
+							original_set(state)
+							defaults_io.save(defaults.state, "inlay_hints", state)
+						end
+					end
+				end
+				persist_inlay_hints()
+				persist_toggle("indent", "indent")
+				persist_toggle("dim", "dim")
+				persist_toggle("words", "words")
+				persist_toggle("zen", "zen")
+				persist_toggle("zoom", "zoom")
+				persist_toggle("scroll", "scroll")
+				persist_toggle("animate", "animate")
+				persist_toggle("cursorline", "cursorline")
+				persist_toggle("list", "list")
+				persist_toggle_value("signcolumn", "signcolumn", function(state)
+					return state and "yes" or "no"
+				end)
+
+				vim.keymap.set("n", "<leader>ud", function()
+					local next_state = not vim.diagnostic.config().virtual_text
+					vim.diagnostic.config({ virtual_text = next_state })
+					defaults_io.save(defaults.state, "diagnostics_inline", next_state)
+				end, { desc = "Toggle Diagnostics Inline (persist)" })
+
+				apply_snacks_state()
+
+				pcall(function()
+					require("which-key").add({
+						{ "<leader>u", group = "User config" },
+					})
+				end)
 			end,
 		})
 	end,

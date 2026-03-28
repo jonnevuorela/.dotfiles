@@ -1,0 +1,1 @@
+/home/jonne/.config/nvim/lua/plugins/worm.lua:340,5,Added `dir` property to lazy.nvim plugin spec to fix "Invalid plugin spec" error - local plugins require a `dir` field pointing to the plugin location

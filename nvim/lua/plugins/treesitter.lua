@@ -12,10 +12,8 @@ return {
 		ignore_install = { "ipkg" },
 	},
 	config = function(_, opts)
-		-- safe require: if the plugin isn't installed yet this won't error and will let startup continue
 		local ok, configs = pcall(require, "nvim-treesitter.configs")
 		if not ok or not configs then
-			vim.notify("nvim-treesitter not installed yet, skipping setup", vim.log.levels.WARN)
 			return
 		end
 		configs.setup(opts)
