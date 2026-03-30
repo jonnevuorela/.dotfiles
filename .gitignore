@@ -4,5 +4,7 @@ nvim/*.md
 nvim/*.txt
 nvim/*.tags
 nvim/doc
+nvim/tmp/*
+nvim/tmp
 
 .DS_Store
