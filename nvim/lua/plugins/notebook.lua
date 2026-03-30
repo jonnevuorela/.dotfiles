@@ -24,9 +24,38 @@ return {
 					integrations = { markdown = { enabled = false } },
 					max_height_window_percentage = 50,
 					kitty_method = "normal",
+					window_overlap_clear_enabled = false,
 				},
 				config = function(_, opts)
 					require("image").setup(opts)
+
+					-- Patch image.nvim to suppress E966 (invalid line number) and EPIPE errors
+					local ok, renderer = pcall(require, "image/renderer")
+					if ok and renderer and renderer.render then
+						local orig_render = renderer.render
+						_G._image_screenpos_orig = vim.fn.screenpos
+						renderer.render = function(image)
+							local tmp = vim.fn.screenpos
+							vim.fn.screenpos = function(win, line, col)
+								local ok_sp, pos = pcall(tmp, win, line, col)
+								if not ok_sp then
+									return { row = 0, col = 0, winrow = 0, wincol = 0 }
+								end
+								return pos
+							end
+							local result = orig_render(image)
+							vim.fn.screenpos = tmp
+							return result
+						end
+					end
+
+					local ok2, helpers = pcall(require, "image/backends/kitty/helpers")
+					if ok2 and helpers and helpers.write then
+						local orig_write = helpers.write
+						helpers.write = function(data, tty, escape)
+							pcall(orig_write, data, tty, escape)
+						end
+					end
 				end,
 			},
 		},
@@ -173,6 +202,272 @@ return {
 				return name
 			end
 
+			local function molten_is_kernel_idle()
+				if not vim.b._nb_kernel_ready then
+					return true
+				end
+				if vim.fn.exists("*MoltenRunningKernels") ~= 1 then
+					return true
+				end
+				local ok, kernels = pcall(vim.fn.MoltenRunningKernels, true)
+				if not ok or not kernels or #kernels == 0 then
+					return true
+				end
+				return false
+			end
+
+			local function normalize_cell_content(content)
+				if type(content) == "table" then
+					content = table.concat(content, "\n")
+				end
+				content = content:gsub("\r\n", "\n"):gsub("\r", "\n")
+				local lines = {}
+				for line in content:gmatch("[^\n]*") do
+					if line:match "^%s*#%s*%%%%" then
+					elseif not line:match "^%s*$" and not line:match "^%s*#"then
+						table.insert(lines, line)
+					end
+				end
+				return table.concat(lines, "\n"):gsub("^%s+", ""):gsub("%s+$", "")
+			end
+
+			local function ensure_notebook_metadata(nb)
+				if not nb.metadata then
+					nb.metadata = {}
+				end
+				if not nb.metadata.kernelspec then
+					nb.metadata.kernelspec = {
+						display_name = "Python 3",
+						language = "python",
+						name = "python3",
+					}
+				end
+				nb.metadata.language_info = nil
+				nb.nbformat = 4
+				nb.nbformat_minor = 5
+				return nb
+			end
+
+			local function write_ipynb(nb, filepath)
+				local encoded = vim.json.encode(nb)
+				local python_cmd = string.format(
+					"import json; import sys; json.dump(json.load(sys.stdin), sys.stdout, indent=1, ensure_ascii=False, separators=(',', ': '))"
+				)
+				local formatted = vim.fn.system(string.format("python3 -c '%s'", python_cmd), encoded)
+				if vim.v.shell_error == 0 and formatted and #formatted > 0 then
+					vim.fn.writefile(vim.split(formatted, "\n"), filepath)
+				else
+					vim.fn.writefile({ encoded }, filepath)
+				end
+			end
+
+			local function ensure_ipynb_metadata_file(filepath)
+				if vim.fn.filereadable(filepath) == 0 then
+					return false
+				end
+				local content = table.concat(vim.fn.readfile(filepath), "\n")
+				local ok, nb = pcall(vim.json.decode, content)
+				if not ok or not nb then
+					return false
+				end
+				ensure_notebook_metadata(nb)
+				write_ipynb(nb, filepath)
+				return true
+			end
+
+			local function sync_outputs_to_ipynb(bufnr)
+				local ipynb_path = vim.b[bufnr].ipynb_source
+				if not ipynb_path or ipynb_path == "" then
+					return false
+				end
+
+				if vim.fn.filereadable(ipynb_path) == 0 then
+					notify("Notebook file not found: " .. ipynb_path, vim.log.levels.WARN)
+					return false
+				end
+
+				local temp_json = vim.fn.tempname() .. ".json"
+				vim.cmd("MoltenSave " .. vim.fn.fnameescape(temp_json))
+
+				if vim.fn.filereadable(temp_json) == 0 then
+					notify("Failed to save Molten state", vim.log.levels.WARN)
+					return false
+				end
+
+				local ok, molten_data = pcall(vim.json.decode, table.concat(vim.fn.readfile(temp_json), "\n"))
+				vim.fn.delete(temp_json)
+
+				if not ok or not molten_data then
+					notify("Failed to parse Molten state", vim.log.levels.WARN)
+					return false
+				end
+
+				local nb_content = vim.fn.readfile(ipynb_path)
+				local ok2, nb = pcall(vim.json.decode, table.concat(nb_content, "\n"))
+				if not ok2 or not nb then
+					notify("Failed to parse notebook: " .. ipynb_path, vim.log.levels.WARN)
+					return false
+				end
+
+				if not nb.cells or #nb.cells == 0 then
+					notify("Notebook has no cells", vim.log.levels.WARN)
+					return false
+				end
+
+				local molten_cells = {}
+				if molten_data.cells then
+					for _, cell_data in ipairs(molten_data.cells) do
+						if cell_data.chunks and #cell_data.chunks > 0 then
+							table.insert(molten_cells, cell_data)
+						end
+					end
+				end
+
+				if #molten_cells == 0 then
+					return true
+				end
+
+				local buf_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+				local buf_line_count = #buf_lines
+
+				local function get_line_range(span)
+					if not span or not span.begin or not span["end"] then
+						return nil, nil
+					end
+					local start_line = span.begin.lineno
+					local end_line = span["end"].lineno
+					if start_line == nil or end_line == nil then
+						return nil, nil
+					end
+					start_line = start_line + 1
+					end_line = end_line + 1
+					if start_line < 1 or end_line < 1 then
+						return nil, nil
+					end
+					if start_line > buf_line_count or end_line > buf_line_count then
+						return nil, nil
+					end
+					if start_line > end_line then
+						return nil, nil
+					end
+					return start_line, end_line
+				end
+
+				local function get_cell_code(start_line, end_line)
+					if not start_line or not end_line then
+						return nil
+					end
+					local code_lines = {}
+					for i = start_line, end_line do
+						if buf_lines[i] and buf_lines[i] ~= "" then
+							table.insert(code_lines, buf_lines[i])
+						end
+					end
+					if #code_lines == 0 then
+						return nil
+					end
+					return table.concat(code_lines, "\n")
+				end
+
+				for _, molten_cell in ipairs(molten_cells) do
+					local start_line, end_line = get_line_range(molten_cell.span)
+					if start_line and end_line then
+						local molten_code = get_cell_code(start_line, end_line)
+						if molten_code and molten_code ~= "" then
+							molten_cell.code = normalize_cell_content(molten_code)
+						end
+					end
+				end
+
+				local nb_code_cells = {}
+				for i, cell in ipairs(nb.cells) do
+					if cell.cell_type == "code" then
+						local cell_code = normalize_cell_content(cell.source or "")
+						table.insert(nb_code_cells, { index = i, code = cell_code })
+					end
+				end
+
+				local matched = 0
+				for _, molten_cell in ipairs(molten_cells) do
+					if molten_cell.code then
+						for _, nb_cell_info in ipairs(nb_code_cells) do
+							if nb_cell_info.code == molten_cell.code then
+								local nb_cell = nb.cells[nb_cell_info.index]
+								local outputs = {}
+								for _, chunk in ipairs(molten_cell.chunks) do
+local output = {
+									output_type = molten_cell.execution_count and "execute_result" or "display_data",
+									data = chunk.data,
+									metadata = chunk.metadata or {},
+								}
+									if molten_cell.execution_count then
+										output.execution_count = molten_cell.execution_count
+									end
+									table.insert(outputs, output)
+								end
+								nb_cell.outputs = outputs
+								if molten_cell.execution_count then
+									nb_cell.execution_count = molten_cell.execution_count
+								end
+								matched = matched + 1
+								break
+							end
+						end
+					end
+				end
+
+				if matched == 0 and #molten_cells > 0 then
+					local valid_cells = 0
+					for _, mc in ipairs(molten_cells) do
+						if mc.code and mc.code ~= "" then
+							valid_cells = valid_cells + 1
+						end
+					end
+					if valid_cells == 0 then
+						notify("No valid cells to sync (spans outside buffer bounds)", vim.log.levels.WARN)
+					else
+						notify("No matching cells found for " .. valid_cells .. " outputs", vim.log.levels.WARN)
+					end
+				end
+
+				if matched > 0 then
+					ensure_notebook_metadata(nb)
+					write_ipynb(nb, ipynb_path)
+				end
+
+				return true
+			end
+
+			local function molten_export_on_done(bufnr, start_time, timeout_ms)
+				local now = vim.uv or vim.loop
+				local elapsed = (now.hrtime() - start_time) / 1e6
+				if elapsed > (timeout_ms or 30000) then
+					return
+				end
+				if molten_is_kernel_idle() then
+					sync_outputs_to_ipynb(bufnr)
+				else
+					vim.defer_fn(function()
+						molten_export_on_done(bufnr, start_time, timeout_ms)
+					end, 100)
+				end
+			end
+
+			local function molten_import_outputs(bufnr)
+				local ipynb_path = vim.b[bufnr].ipynb_source
+				if not ipynb_path or ipynb_path == "" then
+					return false
+				end
+				if vim.fn.exists(":MoltenImportOutput") ~= 2 then
+					return false
+				end
+				if not vim.b[bufnr]._nb_kernel_ready then
+					return false
+				end
+				local ok = pcall(vim.cmd, "MoltenImportOutput " .. vim.fn.fnameescape(ipynb_path))
+				return ok
+			end
+
 			local function molten_init_auto()
 				local py, src = detect_python()
 				if not py then
@@ -197,6 +492,7 @@ return {
 				vim.b._nb_kernel_ready = true
 				vim.b._nb_kernel_name = k
 				notify(("Molten initialized: %s [%s]"):format(k, src))
+
 				return true
 			end
 
@@ -268,12 +564,8 @@ return {
 			end
 
 			local function eval_range_via_function(s, e)
-				if fn_exists("MoltenEvaluateRange") == 1 then
-					return pcall(function()
-						vim.fn.MoltenEvaluateRange(s, e)
-					end)
-				end
-				return false
+				local ok = pcall(vim.fn.MoltenEvaluateRange, "%k", s, e, 1, vim.v.maxcol)
+				return ok
 			end
 
 			local function eval_range_via_visual_clean(s, e)
@@ -281,20 +573,16 @@ return {
 					return false
 				end
 
-				-- use feedkeys (not :normal) to avoid operator-pending leftovers like "c>"
 				local function keys(k)
 					return vim.api.nvim_replace_termcodes(k, true, false, true)
 				end
 
-				-- clear mode / pending operators
 				vim.api.nvim_feedkeys(keys("<Esc>"), "nx", false)
 
-				-- set linewise visual selection
 				vim.api.nvim_win_set_cursor(0, { s, 0 })
 				vim.api.nvim_feedkeys(keys("V"), "nx", false)
 				vim.api.nvim_win_set_cursor(0, { e, 0 })
 
-				-- execute visual selection
 				vim.cmd("MoltenEvaluateVisual")
 				return true
 			end
@@ -308,16 +596,19 @@ return {
 					return false
 				end
 
-				if eval_range_via_function(s, e) then
-					return true
+				local ok = eval_range_via_function(s, e) or eval_range_via_visual_clean(s, e)
+
+				if not ok then
+					notify("No compatible Molten range evaluation method found.", vim.log.levels.ERROR)
+					return false
 				end
 
-				if eval_range_via_visual_clean(s, e) then
-					return true
+				if vim.b.ipynb_source then
+					local now = vim.uv or vim.loop
+					molten_export_on_done(vim.api.nvim_get_current_buf(), now.hrtime(), 30000)
 				end
 
-				notify("No compatible Molten range evaluation method found.", vim.log.levels.ERROR)
-				return false
+				return true
 			end
 
 			local function run_current_cell()
@@ -450,17 +741,20 @@ return {
 					return
 				end
 
-				local empty_nb = [[{
- "cells": [],
- "metadata": {
-  "kernelspec": { "display_name": "Python 3", "language": "python", "name": "python3" },
-  "language_info": { "name": "python" }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}]]
-
-				vim.fn.writefile(vim.split(empty_nb, "\n", { plain = true }), target)
+				local nb = {
+					cells = {},
+					metadata = {
+						kernelspec = {
+							display_name = "Python 3",
+							language = "python",
+							name = "python3",
+						},
+					},
+					nbformat = 4,
+					nbformat_minor = 5,
+				}
+				ensure_notebook_metadata(nb)
+				write_ipynb(nb, target)
 				notify("Created " .. target)
 				vim.cmd("edit " .. vim.fn.fnameescape(target))
 			end
@@ -485,6 +779,8 @@ return {
 					notify("NotebookSync failed. Is jupytext installed?", vim.log.levels.ERROR)
 					return
 				end
+
+				ensure_ipynb_metadata_file(target)
 				notify("Synced -> " .. target)
 			end
 
@@ -510,6 +806,12 @@ return {
 					vim.bo[args.buf].filetype = "python"
 					vim.bo[args.buf].modified = false
 					vim.b[args.buf].ipynb_source = args.file
+
+					if vim.b[args.buf]._nb_kernel_ready then
+						vim.defer_fn(function()
+							molten_import_outputs(args.buf)
+						end, 200)
+					end
 				end,
 			})
 
@@ -529,15 +831,32 @@ return {
 					vim.fn.writefile(lines, tmp)
 
 					local target = vim.b[args.buf].ipynb_source or args.file
-					vim.fn.system({ "jupytext", "--to", "ipynb", "--output", target, tmp })
+					vim.fn.system({ "jupytext", "--to", "ipynb", "--update", "--output", target, tmp })
 					vim.fn.delete(tmp)
 
 					if vim.v.shell_error ~= 0 then
 						notify("Failed writing ipynb via jupytext", vim.log.levels.ERROR)
 						return
 					end
+
+					ensure_ipynb_metadata_file(target)
+
+					if vim.b[args.buf].ipynb_source and vim.b[args.buf]._nb_kernel_ready then
+						sync_outputs_to_ipynb(args.buf)
+					end
+
 					vim.bo[args.buf].modified = false
 					notify("Synced -> " .. target)
+				end,
+			})
+
+			vim.api.nvim_create_autocmd("User", {
+				pattern = "MoltenKernelReady",
+				callback = function()
+					local bufnr = vim.api.nvim_get_current_buf()
+					if vim.b[bufnr].ipynb_source then
+						molten_import_outputs(bufnr)
+					end
 				end,
 			})
 
@@ -587,6 +906,28 @@ return {
 				callback = function(ev)
 					vim.b[ev.buf].molten_cell_delimiter = "# %%"
 
+					-- cell delimiter bar visualization
+					vim.api.nvim_set_hl(0, "NotebookCellDelimiter", { bg = "#404040", fg = "#808080" })
+					local ns = vim.api.nvim_create_namespace("notebook_cell_delim")
+					local function update_delim_hl(bufnr)
+						vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+						local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+						for i, line in ipairs(lines) do
+							if line:match("^%s*#%s*%%%%") then
+								vim.api.nvim_buf_set_extmark(bufnr, ns, i - 1, 0, {
+									line_hl_group = "NotebookCellDelimiter",
+								})
+							end
+						end
+					end
+					update_delim_hl(ev.buf)
+					vim.api.nvim_create_autocmd({ "BufWritePost", "TextChanged", "TextChangedI" }, {
+						buffer = ev.buf,
+						callback = function()
+							update_delim_hl(ev.buf)
+						end,
+					})
+
 					local has_py_lsp = false
 					for _, c in ipairs(vim.lsp.get_clients({ bufnr = ev.buf })) do
 						if c.name == "pyright" or c.name == "basedpyright" or c.name == "pylsp" then
@@ -601,12 +942,6 @@ return {
 						end)
 						pcall(function()
 							vim.lsp.enable("basedpyright")
-						end)
-						pcall(function()
-							local ok, lspconfig = pcall(require, "lspconfig")
-							if ok and lspconfig.pyright then
-								lspconfig.pyright.manager.try_add(ev.buf)
-							end
 						end)
 					end
 				end,
@@ -632,6 +967,12 @@ return {
 
 			vim.api.nvim_create_user_command("NotebookSync", sync_current_to_ipynb, {
 				desc = "Convert current buffer to ipynb via jupytext",
+			})
+
+			vim.api.nvim_create_user_command("NotebookSyncOutputs", function()
+				sync_outputs_to_ipynb(vim.api.nvim_get_current_buf())
+			end, {
+				desc = "Sync Molten outputs to ipynb file",
 			})
 
 			-- -------------------------

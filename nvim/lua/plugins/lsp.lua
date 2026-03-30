@@ -8,6 +8,9 @@ return {
 		"saghen/blink.cmp",
 	},
 	config = function()
+		local vue = require("plugins.vue")
+		local capabilities = require("blink.cmp").get_lsp_capabilities()
+
 		vim.api.nvim_create_autocmd("LspAttach", {
 			group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
 			callback = function(event)
@@ -88,44 +91,31 @@ return {
 			},
 		})
 
-		local capabilities = require("blink.cmp").get_lsp_capabilities()
-
-		-- Vue.js support
-		local vue = require("plugins.vue")
-
-		local servers = {
-			lua_ls = {
-				settings = {
-					Lua = {
-						completion = {
-							callSnippet = "Replace",
-						},
-					},
-				},
-			},
-			vtsls = vue.vtsls,
-		}
-
-		local ensure_installed = vim.tbl_keys(servers or {})
-		vim.list_extend(ensure_installed, {
-			"stylua",
-			"vtsls",
-			"vue-language-server",
-		})
-		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
+		require("mason-tool-installer").setup({ ensure_installed = { "stylua", "vtsls", "vue-language-server" } })
 
 		require("mason-lspconfig").setup({
 			ensure_installed = {},
 			automatic_installation = false,
-			automatic_enable = { exclude = { "vue_ls" } },
+			automatic_enable = false,
 		})
 
-		vim.lsp.config = vim.lsp.config or {}
-		for server_name, server in pairs(servers) do
-			local config = vim.tbl_deep_extend("force", {}, server or {})
-			config.capabilities = vim.tbl_deep_extend("force", {}, capabilities, config.capabilities or {})
-			vim.lsp.config[server_name] = config
-		end
-		vim.lsp.enable(vim.tbl_keys(servers))
+		vim.lsp.config("vtsls", {
+			capabilities = capabilities,
+			filetypes = vue.vtsls_config.filetypes,
+			settings = vue.vtsls_config.settings,
+		})
+
+		vim.lsp.config("lua_ls", {
+			capabilities = capabilities,
+			settings = {
+				Lua = {
+					completion = {
+						callSnippet = "Replace",
+					},
+				},
+			},
+		})
+
+		vim.lsp.enable({ "vtsls", "lua_ls" })
 	end,
 }
