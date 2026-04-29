@@ -1,27 +1,35 @@
-# theme and color
-theme = violet dark
-#foreground = d8d8d8
-#background = 222222
-#
-window-decoration = false
+# Dynamic theme colors
+config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
+
+# Font
+font-family = "JetBrainsMono Nerd Font"
+font-style = Regular
+font-size = 16
+
+# Window
+window-theme = ghostty
+window-padding-x = 14
+window-padding-y = 14
+confirm-close-surface=false
+resize-overlay = never
+gtk-toolbar-style = flat
+
+# Cursor styling
+cursor-style = "block"
+cursor-style-blink = false
+
+# Cursor styling + SSH session terminfo
+# (all shell integration options must be passed together)
+shell-integration-features = no-cursor,ssh-env
+
+# Keyboard bindings
+keybind = shift+insert=paste_from_clipboard
+keybind = control+insert=copy_to_clipboard
+keybind = super+control+shift+alt+arrow_down=resize_split:down,100
+keybind = super+control+shift+alt+arrow_up=resize_split:up,100
+keybind = super+control+shift+alt+arrow_left=resize_split:left,100
+keybind = super+control+shift+alt+arrow_right=resize_split:right,100
 
 
-# font
-font-size = 20
-
-
-# keybinds
-keybind = ctrl+shift+z=close_surface
-keybind = ctrl+shift+d=new_split:right
-keybind = ctrl+shift+t=new_tab
-keybind = ctrl+shift+c=close_surface
-keybind = ctrl+shift+1=goto_tab:1
-keybind = ctrl+shift+2=goto_tab:2 
-keybind = ctrl+shift+3=goto_tab:3
-keybind = ctrl+shift+4=goto_tab:4
-keybind = ctrl+shift+5=goto_tab:5
-keybind = ctrl+shift+6=goto_tab:6
-keybind = ctrl+shift+7=goto_tab:7
-keybind = ctrl+shift+8=goto_tab:8
-keybind = ctrl+shift+9=goto_tab:9
-
+# Fix general slowness on hyprland (https://github.com/ghostty-org/ghostty/discussions/3224)
+async-backend = epoll
