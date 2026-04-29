@@ -8,8 +8,8 @@ return {
 	---@type snacks.Config
 	opts = {
 		bigfile = { enabled = true },
-		dashboard = { enabled = true },
-		explorer = { enabled = true },
+		dashboard = { enabled = false },
+		explorer = { enabled = false },
 		indent = { enabled = true },
 		input = { enabled = true },
 		image = { enabled = true },
@@ -463,9 +463,7 @@ return {
 					defaults_io.save(defaults.state, "relativenumber", next_state)
 					defaults_io.refresh_windows(defaults.state)
 				end, { desc = "Toggle Relative Number (persist)" })
-				s.toggle
-					.diagnostics()
-					:map("<leader>uE", { desc = "Toggle Diagnostics (persist)" })
+				s.toggle.diagnostics():map("<leader>uE", { desc = "Toggle Diagnostics (persist)" })
 				vim.keymap.set("n", "<leader>ul", function()
 					local next_state = not defaults.state.line_number
 					defaults.state.line_number = next_state
@@ -477,37 +475,19 @@ return {
 				s.toggle
 					.option("conceallevel", { off = 0, on = conceal_on, global = true })
 					:map("<leader>uo", { desc = "Toggle Conceal (persist)" })
-				s.toggle
-					.treesitter()
-					:map("<leader>uT", { desc = "Toggle Treesitter (persist)" })
+				s.toggle.treesitter():map("<leader>uT", { desc = "Toggle Treesitter (persist)" })
 				s.toggle
 					.option("background", { off = "light", on = "dark", name = "Dark Background", global = true })
 					:map("<leader>ub", { desc = "Toggle Background (persist)" })
-				s.toggle
-					.inlay_hints()
-					:map("<leader>uh", { desc = "Toggle Inlay Hints (persist)" })
-				s.toggle
-					.indent()
-					:map("<leader>ug", { desc = "Toggle Indent Guides (persist)" })
-				s.toggle
-					.dim()
-					:map("<leader>uD", { desc = "Toggle Dim (persist)" })
+				s.toggle.inlay_hints():map("<leader>uh", { desc = "Toggle Inlay Hints (persist)" })
+				s.toggle.indent():map("<leader>ug", { desc = "Toggle Indent Guides (persist)" })
+				s.toggle.dim():map("<leader>uD", { desc = "Toggle Dim (persist)" })
 
-				s.toggle
-					.words()
-					:map("<leader>uM", { desc = "Toggle Words (persist)" })
-				s.toggle
-					.zen()
-					:map("<leader>uz", { desc = "Toggle Zen (persist)" })
-				s.toggle
-					.zoom()
-					:map("<leader>uZ", { desc = "Toggle Zoom (persist)" })
-				s.toggle
-					.scroll()
-					:map("<leader>uS", { desc = "Toggle Smooth Scroll (persist)" })
-				s.toggle
-					.animate()
-					:map("<leader>uA", { desc = "Toggle Animations (persist)" })
+				s.toggle.words():map("<leader>uM", { desc = "Toggle Words (persist)" })
+				s.toggle.zen():map("<leader>uz", { desc = "Toggle Zen (persist)" })
+				s.toggle.zoom():map("<leader>uZ", { desc = "Toggle Zoom (persist)" })
+				s.toggle.scroll():map("<leader>uS", { desc = "Toggle Smooth Scroll (persist)" })
+				s.toggle.animate():map("<leader>uA", { desc = "Toggle Animations (persist)" })
 				s.toggle
 					.option("cursorline", { name = "Cursorline", global = true })
 					:map("<leader>uc", { desc = "Toggle Cursorline (persist)" })

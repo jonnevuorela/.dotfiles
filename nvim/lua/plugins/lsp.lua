@@ -96,7 +96,7 @@ return {
 		require("mason-lspconfig").setup({
 			ensure_installed = {},
 			automatic_installation = false,
-			automatic_enable = false,
+			automatic_enable = true,
 		})
 
 		vim.lsp.config("vtsls", {

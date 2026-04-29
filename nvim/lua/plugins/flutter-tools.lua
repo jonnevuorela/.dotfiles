@@ -66,6 +66,11 @@ M = {
 			},
 		})
 	end,
+	{
+		"pretodev/dart-class-tools.nvim",
+		ft = "dart",
+		opts = {},
+	},
 }
 
 return M

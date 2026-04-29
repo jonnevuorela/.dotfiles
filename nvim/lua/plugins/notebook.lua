@@ -261,15 +261,27 @@ return {
 				end
 			end
 
-			local function ensure_ipynb_metadata_file(filepath)
+			local function is_valid_ipynb(filepath)
 				if vim.fn.filereadable(filepath) == 0 then
-					return false
+					return false, "not_found"
 				end
 				local content = table.concat(vim.fn.readfile(filepath), "\n")
 				local ok, nb = pcall(vim.json.decode, content)
 				if not ok or not nb then
+					return false, "not_json"
+				end
+				if not nb.cells or not nb.nbformat then
+					return false, "not_notebook"
+				end
+				return true, nb
+			end
+
+			local function ensure_ipynb_metadata_file(filepath)
+				local valid, result = is_valid_ipynb(filepath)
+				if not valid then
 					return false
 				end
+				local nb = result
 				ensure_notebook_metadata(nb)
 				write_ipynb(nb, filepath)
 				return true
@@ -831,7 +843,31 @@ local output = {
 					vim.fn.writefile(lines, tmp)
 
 					local target = vim.b[args.buf].ipynb_source or args.file
-					vim.fn.system({ "jupytext", "--to", "ipynb", "--update", "--output", target, tmp })
+
+					-- Check if target ipynb exists and is valid JSON
+					-- If corrupted, recreate fresh instead of trying to update
+					local use_update = true
+					if vim.fn.filereadable(target) == 1 then
+						local valid, reason = is_valid_ipynb(target)
+						if not valid then
+							notify(
+								("Notebook %s is corrupted (%s), recreating fresh"):format(
+									vim.fn.fnamemodify(target, ":t"),
+									reason
+								),
+								vim.log.levels.WARN
+							)
+							use_update = false
+						end
+					else
+						use_update = false
+					end
+
+					local cmd = { "jupytext", "--to", "ipynb", "--output", target, tmp }
+					if use_update then
+						table.insert(cmd, 4, "--update")
+					end
+					vim.fn.system(cmd)
 					vim.fn.delete(tmp)
 
 					if vim.v.shell_error ~= 0 then
