@@ -42,12 +42,9 @@ do
 end
 
 -- Doxygen
-vim.api.nvim_set_keymap(
-	"n",
-	"<leader>d",
-	":lua require('neogen').generate()<CR>",
-	{ desc = "Neogen", noremap = true, silent = true }
-)
+vim.keymap.set("n", "<leader>d", function()
+	require("neogen").generate()
+end, { desc = "Neogen" })
 
 -- Various
 
@@ -61,7 +58,7 @@ vim.opt.clipboard = "unnamedplus" -- Use system clipboard
 vim.opt.hidden = true -- Enable background buffers
 vim.opt.hlsearch = true -- Highlight found searches
 vim.opt.incsearch = true -- Shows the match while typing
-vim.opt.syntax = "on" -- Enable syntax highlighting
+-- vim.opt.syntax = "on" -- treesitter handles highlighting
 
 -- UI Settings
 -- window-local defaults handled by config.defaults
@@ -96,22 +93,18 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking (copying) text",
 	group = vim.api.nvim_create_augroup("highlight-yank", { clear = true }),
 	callback = function()
-		vim.highlight.on_yank()
+		vim.hl.on_yank()
 	end,
 })
-vim.opt.termguicolors = false
+vim.opt.termguicolors = true
 
 -- background default handled by config.defaults
 
--- gotmpl
+-- gotmpl: set filetype so treesitter injections work natively
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-	group = vim.api.nvim_create_augroup("gotmpl_highlight", { clear = true }),
+	group = vim.api.nvim_create_augroup("gotmpl_filetype", { clear = true }),
 	pattern = "*.tmpl",
 	callback = function()
-		local filename = vim.fn.expand("%:t")
-		local ext = filename:match(".*%.(.-)%.tmpl$")
-
-		-- Add more extension to syntax mappings here if you need to.
 		local ext_filetypes = {
 			go = "go",
 			html = "html",
@@ -119,17 +112,10 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 			yaml = "yaml",
 			yml = "yaml",
 		}
-
+		local filename = vim.fn.expand("%:t")
+		local ext = filename:match(".*%.(.-)%.tmpl$")
 		if ext and ext_filetypes[ext] then
-			-- Set the primary filetype
 			vim.bo.filetype = ext_filetypes[ext]
-
-			-- Define embedded Go template syntax
-			vim.cmd([[
-            syntax include @gotmpl syntax/gotmpl.vim
-            syntax region gotmpl start="{{" end="}}" contains=@gotmpl containedin=ALL
-            syntax region gotmpl start="{%" end="%}" contains=@gotmpl containedin=ALL
-          ]])
 		end
 	end,
 })
@@ -151,11 +137,9 @@ rtp:prepend(lazypath)
 require("lazy").setup({
 	require("plugins.oscyank"),
 	require("plugins.indent-blankline"),
-	require("plugins.flutter-tools"),
-	require("plugins.notebook"),
 	require("plugins.csvview"),
 	require("plugins.neogen"),
-	require("plugins.gopher"),
+	require("plugins.go"),
 	require("plugins.which-key"),
 	require("plugins.todo-comments"),
 	require("plugins.lazydev"),
@@ -168,7 +152,6 @@ require("lazy").setup({
 	require("plugins.blink-cmp"),
 	require("plugins.treesitter"),
 	require("plugins.colorschemes"),
-	require("plugins.godot"),
 })
 
 -- colorscheme default handled by config.defaults

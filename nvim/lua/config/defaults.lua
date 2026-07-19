@@ -15,9 +15,6 @@ M.schema = {
 	inlay_hints = true,
 	line_number = true,
 	list = true,
-	molten_output_show_more = false,
-	molten_virt_text_max_lines = 120,
-	molten_output_mode = "virt",
 	relativenumber = true,
 	scroll = true,
 	signcolumn = "yes",
@@ -139,11 +136,6 @@ function M.apply_global(state)
 		vim.g.snacks_animate = state.animate
 	end
 
-	if state.treesitter ~= nil then
-		pcall(function()
-			vim.treesitter[state.treesitter and "start" or "stop"]()
-		end)
-	end
 	if state.diagnostics ~= nil then
 		vim.diagnostic.enable(state.diagnostics)
 	end

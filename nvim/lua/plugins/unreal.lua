@@ -40,7 +40,7 @@ local function get_ubt_path()
 end
 
 function M.get_project_root()
-	local cwd = vim.loop.cwd()
+	local cwd = vim.uv.cwd()
 	if cwd then
 		return cwd
 	end
@@ -49,12 +49,12 @@ end
 
 function M.get_uproject()
 	local project_root = M.get_project_root()
-	local scan = vim.loop.fs_scandir(project_root)
+	local scan = vim.uv.fs_scandir(project_root)
 	if not scan then
 		return nil
 	end
 	while true do
-		local name = vim.loop.fs_scandir_next(scan)
+		local name = vim.uv.fs_scandir_next(scan)
 		if not name then
 			break
 		end

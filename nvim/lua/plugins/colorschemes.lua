@@ -9,7 +9,7 @@ return {
 		"rose-pine/neovim",
 		config = function()
 			require("rose-pine").setup({
-				{
+				highlight_groups = {
 					Normal = { bg = "#061111" },
 					NormalNC = { bg = "#061111" },
 				},

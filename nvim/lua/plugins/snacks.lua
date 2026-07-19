@@ -20,7 +20,7 @@ return {
 		scroll = { enabled = true },
 		dim = { enabled = true },
 		zen = { enabled = true },
-		animate = { enabled = true },
+		animate = { enabled = false },
 		statuscolumn = { enabled = true },
 		words = { enabled = true },
 		styles = { notification = {} },
@@ -475,7 +475,32 @@ return {
 				s.toggle
 					.option("conceallevel", { off = 0, on = conceal_on, global = true })
 					:map("<leader>uo", { desc = "Toggle Conceal (persist)" })
-				s.toggle.treesitter():map("<leader>uT", { desc = "Toggle Treesitter (persist)" })
+				s.toggle({
+					id = "treesitter",
+					name = "Treesitter Highlight",
+					get = function()
+						return defaults.state.treesitter
+					end,
+					set = function(state)
+						defaults.state.treesitter = state
+						defaults_io.save(defaults.state, "treesitter", state)
+						pcall(vim.treesitter[state and "start" or "stop"])
+					end,
+				}):map("<leader>uT", { desc = "Toggle Treesitter (persist)" })
+
+				-- per-buffer treesitter start when state is enabled
+				vim.api.nvim_create_autocmd("BufWinEnter", {
+					group = vim.api.nvim_create_augroup("snacks-ts-start", { clear = true }),
+					callback = function()
+						if defaults.state.treesitter then
+							local buf = vim.api.nvim_get_current_buf()
+							local ft = vim.bo[buf].filetype
+							if ft ~= "" and vim.treesitter.language.get_lang(ft) then
+								pcall(vim.treesitter.start, buf)
+							end
+						end
+					end,
+				})
 				s.toggle
 					.option("background", { off = "light", on = "dark", name = "Dark Background", global = true })
 					:map("<leader>ub", { desc = "Toggle Background (persist)" })
@@ -548,31 +573,31 @@ return {
 					end
 				end
 
-				local function persist_toggle(id, key)
-					local toggle = s.toggle.get(id)
-					if toggle then
-						local original_set = toggle.set
-						toggle.set = function(state)
-							original_set(state)
-							defaults_io.save(defaults.state, key, state)
-							defaults_io.refresh_windows(defaults.state)
-							apply_snacks_state()
-						end
-					end
+		local function persist_toggle(id, key)
+			local toggle = s.toggle.get(id)
+			if toggle then
+				local original_set = toggle.set
+				toggle.set = function(self, state)
+					original_set(self, state)
+					defaults_io.save(defaults.state, key, state)
+					defaults_io.refresh_windows(defaults.state)
+					apply_snacks_state()
 				end
+			end
+		end
 
-				local function persist_toggle_value(id, key, mapper)
-					local toggle = s.toggle.get(id)
-					if toggle then
-						local original_set = toggle.set
-						toggle.set = function(state)
-							original_set(state)
-							defaults_io.save(defaults.state, key, mapper(state))
-							defaults_io.refresh_windows(defaults.state)
-							apply_snacks_state()
-						end
-					end
+		local function persist_toggle_value(id, key, mapper)
+			local toggle = s.toggle.get(id)
+			if toggle then
+				local original_set = toggle.set
+				toggle.set = function(self, state)
+					original_set(self, state)
+					defaults_io.save(defaults.state, key, mapper(state))
+					defaults_io.refresh_windows(defaults.state)
+					apply_snacks_state()
 				end
+			end
+		end
 
 				persist_toggle("spell", "spell")
 				persist_toggle("wrap", "wrap")
@@ -580,20 +605,19 @@ return {
 				persist_toggle_value("conceallevel", "conceallevel", function(state)
 					return state and conceal_on or 0
 				end)
-				persist_toggle("treesitter", "treesitter")
 				persist_toggle_value("background", "background", function(state)
 					return state and "dark" or "light"
 				end)
-				local function persist_inlay_hints()
-					local toggle = s.toggle.get("inlay_hints")
-					if toggle then
-						local original_set = toggle.set
-						toggle.set = function(state)
-							original_set(state)
-							defaults_io.save(defaults.state, "inlay_hints", state)
-						end
-					end
+		local function persist_inlay_hints()
+			local toggle = s.toggle.get("inlay_hints")
+			if toggle then
+				local original_set = toggle.set
+				toggle.set = function(self, state)
+					original_set(self, state)
+					defaults_io.save(defaults.state, "inlay_hints", state)
 				end
+			end
+		end
 				persist_inlay_hints()
 				persist_toggle("indent", "indent")
 				persist_toggle("dim", "dim")
